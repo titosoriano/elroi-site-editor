@@ -1,6 +1,6 @@
 # ElRoi Site Editor: guide for agents
 
-ElRoi Site Editor is ElRoi Marketing's WordPress plugin for client editing. A custom theme describes which fields each page template has; the plugin builds the wp-admin forms, saves the content as JSON page meta with revisions, adds a Site Settings screen, gives the Editor role safe access, locks the structure of designed pages, and adds a "How to edit" guide. Clients change words and pictures; the design stays in the theme.
+ElRoi Site Editor is [ElRoi Marketing](https://elroi.marketing/)'s WordPress plugin for client editing. A custom theme describes which fields each page template has; the plugin builds the wp-admin forms, saves the content as JSON page meta with revisions, adds a Site Settings screen, gives the Editor role safe access, locks the structure of designed pages, and adds a "How to edit" guide. Clients change words and pictures; the design stays in the theme.
 
 Use it on every new client site ElRoi builds. Install and activate the plugin first, then build the theme around it.
 

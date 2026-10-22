@@ -7,7 +7,7 @@
 ![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777bb4)
 ![License GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)
 
-ElRoi Site Editor is the WordPress plugin ElRoi Marketing installs on every custom website it builds. The design lives in a hand-coded theme; the words and pictures live in simple forms that the client fills in from wp-admin. Clients can change a heading, swap a photo or add a review on their own, while the layout, colors and fonts stay exactly as designed.
+ElRoi Site Editor is the WordPress plugin [ElRoi Marketing](https://elroi.marketing/) installs on every custom website it builds. The design lives in a hand-coded theme; the words and pictures live in simple forms that the client fills in from wp-admin. Clients can change a heading, swap a photo or add a review on their own, while the layout, colors and fonts stay exactly as designed.
 
 No page builder, no ACF, no blocks to drag around.
 
@@ -105,4 +105,4 @@ Releases are built and published with `bin/release.sh --publish` after bumping t
 
 GPL-2.0-or-later, like WordPress itself. See [LICENSE](LICENSE).
 
-Made by ElRoi Marketing.
+Made by [ElRoi Marketing](https://elroi.marketing/): custom websites, built to be edited by the people who own them.
