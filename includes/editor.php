@@ -75,7 +75,7 @@ function elroi_box( $post ) {
 	wp_nonce_field( 'elroi_save', 'elroi_nonce' );
 	echo '<div class="elroi">';
 	echo '<p class="elroi-intro">Edit the words and pictures of this page here, then click <strong>Update</strong>. The layout and styles stay as designed. Every update is kept as a revision, so you can compare or go back.';
-	if ( elroi_placeholders() ) {
+	if ( $cfg['placeholders'] && elroi_placeholders() ) {
 		echo ' Values from Site Settings can be typed as <code>{name}</code>, for example <code>' . esc_html( array_key_first( elroi_placeholders() ) ) . '</code>.';
 	}
 	echo '</p>';

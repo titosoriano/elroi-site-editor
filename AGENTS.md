@@ -51,7 +51,7 @@ add_action( 'after_setup_theme', function () {
 } );
 ```
 
-`elroi_register_template( $template, $args )`: `$template` is the value stored in `_wp_page_template` (e.g. `templates/service.php`) or `'front-page'`. Args: `label` (shown in the guide), `fields`, `meta_key` (default `_elroi_content`; set it to keep an existing meta key when moving a site onto the plugin), `box_title` (default "Page content"), `intro`, `block_editor` (default false: the block editor and content field are removed on these pages), `lock` (default true).
+`elroi_register_template( $template, $args )`: `$template` is the value stored in `_wp_page_template` (e.g. `templates/service.php`) or `'front-page'`. Args: `label` (shown in the guide), `fields`, `meta_key` (default `_elroi_content`; set it to keep an existing meta key when moving a site onto the plugin), `box_title` (default "Page content"), `intro`, `block_editor` (default false: the block editor and content field are removed on these pages), `lock` (default true), `placeholders` (default true; set false when the template does not print through `elroi_text()`, so the form does not promise `{setting}` placeholders).
 
 ## Field types
 

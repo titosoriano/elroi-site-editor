@@ -31,6 +31,8 @@ $GLOBALS['elroi_settings']  = null;
  *     @type string   $intro        Extra line at the top of the form.
  *     @type bool     $block_editor Keep the block editor on these pages. Default false.
  *     @type bool     $lock         Lock slug, template, parent, status and deletion for non-admins. Default true.
+ *     @type bool     $placeholders Mention {setting} placeholders in the form intro (set false when the
+ *                                  template prints text without elroi_text()). Default true.
  * }
  */
 function elroi_register_template( $template, $args ) {
@@ -44,6 +46,7 @@ function elroi_register_template( $template, $args ) {
 			'intro'        => '',
 			'block_editor' => false,
 			'lock'         => true,
+			'placeholders' => true,
 		)
 	);
 	$fields = array();
