@@ -1,0 +1,39 @@
+/* ElRoi Site Editor (wp-admin) */
+.elroi { max-width: 980px; }
+.elroi-intro { margin: 4px 0 18px; padding: 12px 14px; background: #f0f6fc; border-left: 4px solid #2271b1; font-size: 13px; }
+.elroi-h { margin: 28px 0 10px; padding-top: 16px; border-top: 1px solid #dcdcde; font-size: 15px; }
+.elroi-intro + .elroi-h, .elroi-settings h1 + p + .elroi-h { border-top: 0; padding-top: 0; }
+.elroi-field { margin: 0 0 14px; }
+.elroi-field > label, .elroi-label { display: block; margin-bottom: 4px; font-weight: 600; }
+.elroi-field input[type="text"], .elroi-field input[type="url"], .elroi-field input[type="email"], .elroi-field textarea, .elroi-field select { width: 100%; max-width: 100%; }
+.elroi-field .description { margin-top: 4px; }
+.elroi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0 16px; }
+.elroi-group { margin: 6px 0 14px; padding: 10px 12px 0; border: 1px solid #dcdcde; border-radius: 2px; }
+.elroi-group > legend, .elroi-checks > legend, .elroi-numbers > legend { padding: 0 4px; font-weight: 600; }
+.elroi-checks label { display: inline-block; margin: 4px 12px 4px 0; }
+.elroi-numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 4px 12px; }
+.elroi-numbers legend { grid-column: 1 / -1; }
+.elroi-numbers label { font-size: 12px; }
+
+.elroi-items { display: grid; gap: 8px; margin-bottom: 10px; }
+.elroi-items--grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.elroi-item { border: 1px solid #c3c4c7; border-radius: 2px; background: #fff; }
+.elroi-item > summary { padding: 10px 12px; cursor: pointer; font-weight: 600; background: #f6f7f7; }
+.elroi-item[open] > summary { border-bottom: 1px solid #dcdcde; }
+.elroi-kind { display: inline-block; min-width: 64px; margin-right: 6px; font-weight: 500; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: #50575e; }
+.elroi-item__body { padding: 12px 14px 4px; }
+.elroi-item--card .elroi-image__preview img { max-width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.elroi-item .elroi-repeater { margin: 6px 0 14px; padding: 12px; background: #f6f7f7; border-radius: 2px; }
+.elroi-add { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.elroi-tools { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 0 0 12px; }
+.elroi-danger { color: #b32d2e; }
+.elroi-danger:hover, .elroi-danger:focus { color: #8a2424; }
+
+.elroi-image__preview img { display: block; max-width: 220px; height: auto; border-radius: 2px; }
+.elroi-image__actions { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
+.elroi-image__alt { display: block; }
+.elroi-image [hidden] { display: none; }
+.elroi-image__alt span { display: block; margin-bottom: 4px; font-weight: 500; }
+.elroi-image__alt input { width: 100%; }
+.elroi-gallery { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.elroi-gallery img { width: 72px; height: 72px; object-fit: cover; border-radius: 2px; }

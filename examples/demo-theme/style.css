@@ -1,0 +1,12 @@
+/*
+Theme Name: ElRoi Demo
+Description: Example theme for ElRoi Site Editor: shows how a theme registers editable fields and prints them.
+Version: 1.0.0
+*/
+body { font-family: system-ui, sans-serif; margin: 0; color: #1d2327; }
+.wrap { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+.hero { background: #0b2a3a; color: #fff; }
+.hero em, h2 em { color: #25b9a5; font-style: normal; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.card { border: 1px solid #ddd; padding: 16px; }
+img { max-width: 100%; height: auto; }

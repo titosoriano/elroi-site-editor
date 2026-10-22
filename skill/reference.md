@@ -1,0 +1,118 @@
+# ElRoi Site Editor: guide for agents
+
+ElRoi Site Editor is ElRoi Marketing's WordPress plugin for client editing. A custom theme describes which fields each page template has; the plugin builds the wp-admin forms, saves the content as JSON page meta with revisions, adds a Site Settings screen, gives the Editor role safe access, locks the structure of designed pages, and adds a "How to edit" guide. Clients change words and pictures; the design stays in the theme.
+
+Use it on every new client site ElRoi builds. Install and activate the plugin first, then build the theme around it.
+
+## Rules when building a theme with it
+
+- **Never hard-code client copy, photos or contact facts in templates.** Every heading, paragraph, list, button text that may change, photo, phone, address and email comes from a registered field or a Site Setting. Layout markup, class names and fixed UI words ("Read more", "Menu") stay in the template.
+- Register fields in the theme's `functions.php` on `after_setup_theme`, guarded with `function_exists( 'elroi_register_template' )`.
+- Give every field a `default` holding the copy the design was built with, so a fresh page renders complete and an emptied field goes back to it.
+- Print everything through the escaping helpers: `elroi_text()`, `elroi_heading()`, `elroi_paragraphs()`, `elroi_link()`, `elroi_image()`. Never echo a raw value.
+- Labels are plain English for a non-technical client ("Main heading (H1)", "Short description"). Add `help` where the client could get it wrong.
+- Contact facts used in many places (phones, addresses, email, years in business, review count, social links) go in `elroi_register_settings()`, not in page fields. Text fields can show them with `{key}`.
+- Before handing a site over, check that saving every page's form unchanged changes nothing (see Testing).
+
+## Registering
+
+```php
+add_action( 'after_setup_theme', function () {
+	if ( ! function_exists( 'elroi_register_template' ) ) {
+		return;
+	}
+	elroi_register_settings( array(
+		'menu_title' => 'Acme',              // wp-admin menu name (default: site title)
+		'support'    => 'ElRoi Marketing',   // who the client contacts, shown in the guide
+		'sections'   => array(
+			'contact' => array( 'label' => 'Contact', 'fields' => array(
+				'phone' => array( 'label' => 'Phone', 'default' => '(555) 010-0000', 'half' => true ),
+				'email' => array( 'type' => 'email', 'label' => 'Email', 'default' => 'hi@acme.com', 'half' => true ),
+			) ),
+			'social' => array( 'label' => 'Social profiles', 'fields' => array(
+				'instagram' => array( 'type' => 'url', 'label' => 'Instagram', 'clearable' => true ),
+			) ),
+		),
+	) );
+
+	elroi_register_template( 'front-page', array(          // the page set as home page
+		'label'     => 'Home page',
+		'box_title' => 'Home page content',
+		'fields'    => array(
+			'hero' => array( 'type' => 'group', 'label' => 'Top of the page', 'fields' => array(
+				'h1'    => array( 'type' => 'heading', 'label' => 'Main heading (H1)', 'default' => 'We build *better homes.*' ),
+				'lede'  => array( 'type' => 'textarea', 'label' => 'Introduction', 'default' => '{years} years of experience.' ),
+				'photo' => array( 'type' => 'image', 'label' => 'Background photo' ),
+			) ),
+		),
+	) );
+
+	elroi_register_template( 'templates/service.php', array( 'label' => 'Service page', 'fields' => array( /* ... */ ) ) );
+} );
+```
+
+`elroi_register_template( $template, $args )`: `$template` is the value stored in `_wp_page_template` (e.g. `templates/service.php`) or `'front-page'`. Args: `label` (shown in the guide), `fields`, `meta_key` (default `_elroi_content`; set it to keep an existing meta key when moving a site onto the plugin), `box_title` (default "Page content"), `intro`, `block_editor` (default false: the block editor and content field are removed on these pages), `lock` (default true).
+
+## Field types
+
+Every field: `type` (default `text`), `label`, `help`, `default`, `half` (true: sits side by side with the next half field), `show_if` (top-level only: `fn( $post ) => bool`; a hidden field keeps its stored value).
+
+| Type | Stored as | Notes |
+|---|---|---|
+| `text` | string | One line. |
+| `heading` | string | Like text; `*words*` print as `<em>` through `elroi_heading()`. |
+| `textarea` | string | One paragraph (line breaks become spaces). `rows`. |
+| `paragraphs` | list of strings | Blank line between paragraphs. Print with `elroi_paragraphs()`. |
+| `lines` | list of strings | One per line (checklists, town lists, categories). |
+| `link` | string | Site path (`/services/`) or full URL. Print with `elroi_link()`. |
+| `url`, `email` | string | Validated. |
+| `number` | int or float | |
+| `numbers` | list of numbers | Fixed list with `labels` (e.g. Across, Down, Zoom) and a `default` list; blanks take the default. |
+| `select` | string | `options` list. |
+| `checkboxes` | list of strings | `options` list, or `options_from` => key of a top-level `lines` field (e.g. photo categories). Saving keeps only listed options, in list order. |
+| `image` | attachment ID | Picker plus required alt text, saved on the attachment. Print with `elroi_image( $id, $size, $attr )`. |
+| `gallery` | list of IDs | Multi-select picker. |
+| `group` | object | `fields`. A top-level group is a titled part of the form. |
+| `repeater` | list of objects | `fields`, `item` (singular name), `title` (field shown in the item bar, default the first), `layout` `list` (collapsible) or `grid` (cards, good for photos), `add_label`, `multi_image` => image field key (adds an "Add several photos" button). Repeaters nest. |
+
+Storage: only non-empty values that differ from their default are saved, in field order. Keys the schema does not know are kept, including unknown keys inside repeater items (carried through the form in a hidden `__extra` input), so moving existing data onto the plugin never loses anything.
+
+Reading: `elroi_content()` returns every field for the current page with defaults filled in (an empty value or empty list shows the default; repeater items have every key, empty when missing). `elroi_get( 'hero.h1' )` reads one path. `elroi_saved()` returns only what is stored.
+
+## Template functions
+
+- `elroi_content( $post = null )`, `elroi_get( $path, $post = null, $default = '' )`, `elroi_saved( $post = null )`
+- `elroi_text( $s )`: escaped, with `{key}` placeholders from Site Settings filled in (add more with the `elroi_placeholders` filter).
+- `elroi_heading( $s, $tag = 'em' )`: like `elroi_text()`, `*words*` wrapped in `<em>`.
+- `elroi_paragraphs( $list, $attrs = '' )`: `<p>` per paragraph.
+- `elroi_link( $path_or_url )`: escaped URL; paths go through `home_url()`.
+- `elroi_image( $id, $size = 'large', $attr = array() )`: `wp_get_attachment_image()`.
+- `elroi_setting( $key = null )`: one setting or all; empty gives the default; a cleared `clearable` field gives `''`.
+- `elroi_tel( $label )`: `+15550100000` from "(555) 010-0000".
+
+## Client access
+
+- Clients get the WordPress **Editor** role. They can use Site Settings (`elroi_client_cap()`, default `edit_others_pages`, filter `elroi_client_cap`) and every form.
+- Locked pages (`elroi_is_locked_page()`: registered templates with `lock`, the home page, the posts page; filter `elroi_is_locked_page`): only administrators can change the template, slug, parent, status or order, or delete them.
+- wp-admin shows the "How to edit" guide (generated from the registered templates and settings) and a dashboard widget.
+
+## Testing
+
+`tests/` runs on a local WordPress Playground with the demo theme in `examples/demo-theme/`:
+
+```bash
+mise exec node@22 -- npx -y @wp-playground/cli@3.1.56 server --port=9400 --login --blueprint=tests/blueprint.json \
+  --mount="$PWD:/wordpress/wp-content/plugins/elroi-site-editor" \
+  --mount="$PWD/examples/demo-theme:/wordpress/wp-content/themes/elroi-demo" \
+  --mount="$PWD/tests:/wordpress/elroi-tests"
+curl -s http://127.0.0.1:9400/elroi-tests/run.php          # JSON: passed / failed
+open http://127.0.0.1:9400/elroi-tests/login.php            # signs in as admin (local only)
+```
+
+Playground needs Node 22 (it fails on Node 26). Every change must keep all checks passing. On a client site, the same round-trip check applies: render each page's form, post it back unchanged, and confirm the stored content and the rendered page are identical.
+
+## Releases and updates
+
+- Bump `Version:` and `ELROI_SE_VERSION` in `elroi-site-editor.php`, commit, then `bin/release.sh --publish` (builds `dist/elroi-site-editor.zip` without tests/examples and publishes a GitHub release `vX.Y.Z` with it).
+- Sites update from the private repo `titosoriano/elroi-site-editor` through the normal WordPress Update button. Each site needs a read-only fine-grained token (Contents: read on this repo) in its `wp-config.php`: `define( 'ELROI_SE_GITHUB_TOKEN', '...' );`. Never commit a token.
+- Data format changes must stay backward compatible: existing pages must render the same after an update.
