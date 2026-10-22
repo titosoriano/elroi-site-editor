@@ -224,7 +224,7 @@ $seen = array();
 $mock = function ( $pre, $args, $url ) use ( &$seen ) {
 	$seen[] = array( $url, $args['headers']['Authorization'] ?? '', $args['redirection'] ?? null );
 	if ( str_ends_with( $url, '/releases/latest' ) ) {
-		return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'headers' => array(), 'body' => wp_json_encode( array( 'tag_name' => 'v9.9.9', 'body' => 'Notes', 'published_at' => '2026-10-22', 'assets' => array( array( 'name' => 'elroi-site-editor.zip', 'url' => 'https://api.github.com/repos/' . ELROI_SE_REPO . '/releases/assets/1' ) ) ) ), 'cookies' => array() );
+		return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'headers' => array(), 'body' => wp_json_encode( array( 'tag_name' => 'v9.9.9', 'body' => 'Notes', 'published_at' => '2026-10-22', 'assets' => array( array( 'name' => 'elroi-site-editor.zip', 'url' => 'https://api.github.com/repos/' . ELROI_SE_REPO . '/releases/assets/1', 'browser_download_url' => 'https://github.com/' . ELROI_SE_REPO . '/releases/download/v9.9.9/elroi-site-editor.zip' ) ) ) ), 'cookies' => array() );
 	}
 	if ( str_contains( $url, '/releases/assets/1' ) ) {
 		return array( 'response' => array( 'code' => 302, 'message' => 'Found' ), 'headers' => array( 'location' => 'https://objects.example/signed.zip' ), 'body' => '', 'cookies' => array() );
@@ -248,6 +248,16 @@ $check( 'the token is sent to GitHub but not to the signed link', 'Bearer test-t
 if ( is_string( $file ) ) {
 	wp_delete_file( $file );
 }
+// Without a token (the public repository): no Authorization header, the public download link,
+// and WordPress downloads it itself.
+add_filter( 'elroi_se_github_token', '__return_empty_string' );
+delete_site_transient( 'elroi_se_release' );
+$seen = array();
+$t    = apply_filters( 'pre_set_site_transient_update_plugins', (object) array( 'response' => array() ) );
+$upd  = $t->response[ plugin_basename( ELROI_SE_FILE ) ] ?? null;
+$check( 'without a token the update uses the public download link', $upd && str_starts_with( $upd->package, 'https://github.com/' ) && '' === ( $seen[0][1] ?? 'x' ), array( $upd, $seen ) );
+$check( 'without a token WordPress downloads the package itself', false === apply_filters( 'upgrader_pre_download', false, $upd ? $upd->package : '', null, array() ) );
+remove_filter( 'elroi_se_github_token', '__return_empty_string' );
 remove_filter( 'pre_http_request', $mock, 10 );
 delete_site_transient( 'elroi_se_release' );
 

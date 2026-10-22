@@ -9,7 +9,7 @@ ElRoi Marketing builds custom WordPress themes, and every client must be able to
 
 ## When building or changing a client theme
 
-1. Make sure the plugin is installed and active (repo `titosoriano/elroi-site-editor`, private; latest release zip). Check with `wp plugin list` or the site's MCP.
+1. Make sure the plugin is installed and active (public repo `titosoriano/elroi-site-editor`; install the `elroi-site-editor.zip` of the latest release). Check with `wp plugin list` or the site's MCP.
 2. Read `reference.md` next to this file (the full field reference and rules). It is a copy of the plugin's `AGENTS.md`; if the plugin checkout is available, its `AGENTS.md` is the newest version.
 3. Design the page first, then list every piece of copy and every photo on it, and register them with `elroi_register_template()` in the theme's `functions.php` (defaults = the designed copy). Contact facts used site-wide go in `elroi_register_settings()`.
 4. Print every value with `elroi_text()`, `elroi_heading()`, `elroi_paragraphs()`, `elroi_link()` or `elroi_image()`. Never hard-code client copy or photos in templates, never echo raw values.
@@ -18,5 +18,5 @@ ElRoi Marketing builds custom WordPress themes, and every client must be able to
 ## Do not
 
 - Do not install ACF, a page builder, or another field plugin for client editing.
-- Do not put tokens (`ELROI_SE_GITHUB_TOKEN`) in a repository; they live in the site's `wp-config.php`.
+- Do not put tokens, passwords or client data in the plugin repository: it is public.
 - Do not change a field's key on a live site without moving its stored data: the key is where the content is saved.
