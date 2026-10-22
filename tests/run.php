@@ -215,6 +215,42 @@ elroi_guide_widget();
 $guide = ob_get_clean();
 $check( 'guide lists the registered page types', str_contains( $guide, 'Landing page' ) && str_contains( $guide, 'Home page' ) && str_contains( $guide, 'ElRoi Marketing' ) );
 
+// 8. Updates from GitHub, with GitHub's answers simulated (no network, a fake token).
+if ( ! defined( 'ELROI_SE_GITHUB_TOKEN' ) ) {
+	define( 'ELROI_SE_GITHUB_TOKEN', 'test-token' );
+}
+delete_site_transient( 'elroi_se_release' );
+$seen = array();
+$mock = function ( $pre, $args, $url ) use ( &$seen ) {
+	$seen[] = array( $url, $args['headers']['Authorization'] ?? '', $args['redirection'] ?? null );
+	if ( str_ends_with( $url, '/releases/latest' ) ) {
+		return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'headers' => array(), 'body' => wp_json_encode( array( 'tag_name' => 'v9.9.9', 'body' => 'Notes', 'published_at' => '2026-10-22', 'assets' => array( array( 'name' => 'elroi-site-editor.zip', 'url' => 'https://api.github.com/repos/' . ELROI_SE_REPO . '/releases/assets/1' ) ) ) ), 'cookies' => array() );
+	}
+	if ( str_contains( $url, '/releases/assets/1' ) ) {
+		return array( 'response' => array( 'code' => 302, 'message' => 'Found' ), 'headers' => array( 'location' => 'https://objects.example/signed.zip' ), 'body' => '', 'cookies' => array() );
+	}
+	if ( 'https://objects.example/signed.zip' === $url ) {
+		if ( ! empty( $args['filename'] ) ) {
+			file_put_contents( $args['filename'], 'zip' ); // phpcs:ignore
+		}
+		return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'headers' => array(), 'body' => '', 'cookies' => array() );
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $mock, 10, 3 );
+$t   = apply_filters( 'pre_set_site_transient_update_plugins', (object) array( 'response' => array() ) );
+$upd = $t->response[ plugin_basename( ELROI_SE_FILE ) ] ?? null;
+$check( 'a newer GitHub release shows as an update', $upd && '9.9.9' === $upd->new_version, $t );
+$file = apply_filters( 'upgrader_pre_download', false, $upd ? $upd->package : '', null, array() );
+$check( 'the update downloads through the signed link', is_string( $file ) && file_exists( $file ), $file );
+$signed = array_values( array_filter( $seen, fn( $x ) => 'https://objects.example/signed.zip' === $x[0] ) );
+$check( 'the token is sent to GitHub but not to the signed link', 'Bearer test-token' === ( $seen[0][1] ?? '' ) && $signed && '' === $signed[0][1], $seen );
+if ( is_string( $file ) ) {
+	wp_delete_file( $file );
+}
+remove_filter( 'pre_http_request', $mock, 10 );
+delete_site_transient( 'elroi_se_release' );
+
 // Put the content back.
 foreach ( $backup as $id => $raw ) {
 	$cfg = elroi_template_for( $id );
