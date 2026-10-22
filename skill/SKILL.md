@@ -9,6 +9,8 @@ ElRoi Marketing builds custom WordPress themes, and every client must be able to
 
 ## When building or changing a client theme
 
+0. For a new client, start from the **ElRoi Starter** theme: on GitHub, `titosoriano/elroi-starter` > "Use this template" > a private repo named after the client. Its `AGENTS.md` explains branding (`assets/css/tokens.css`), templates, the lead form (HighLevel, Turnstile) and local tests.
+
 1. Make sure the plugin is installed and active (public repo `titosoriano/elroi-site-editor`; install the `elroi-site-editor.zip` of the latest release). Check with `wp plugin list` or the site's MCP.
 2. Read `reference.md` next to this file (the full field reference and rules). It is a copy of the plugin's `AGENTS.md`; if the plugin checkout is available, its `AGENTS.md` is the newest version.
 3. Design the page first, then list every piece of copy and every photo on it, and register them with `elroi_register_template()` in the theme's `functions.php` (defaults = the designed copy). Contact facts used site-wide go in `elroi_register_settings()`.
