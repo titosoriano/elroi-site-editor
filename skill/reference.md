@@ -84,11 +84,26 @@ Reading: `elroi_content()` returns every field for the current page with default
 - `elroi_content( $post = null )`, `elroi_get( $path, $post = null, $default = '' )`, `elroi_saved( $post = null )`
 - `elroi_text( $s )`: escaped, with `{key}` placeholders from Site Settings filled in (add more with the `elroi_placeholders` filter).
 - `elroi_heading( $s, $tag = 'em' )`: like `elroi_text()`, `*words*` wrapped in `<em>`.
-- `elroi_paragraphs( $list, $attrs = '' )`: `<p>` per paragraph.
+- `elroi_paragraphs( $list, $attrs = '', $rich = false )`: `<p>` per paragraph.
+- `elroi_rich( $text )`: like `elroi_text()`, `[words](/path)` becomes a link. `elroi_plain( $text )`: plain words for structured data.
 - `elroi_link( $path_or_url )`: escaped URL; paths go through `home_url()`.
 - `elroi_image( $id, $size = 'large', $attr = array() )`: `wp_get_attachment_image()`.
 - `elroi_setting( $key = null )`: one setting or all; empty gives the default; a cleared `clearable` field gives `''`.
 - `elroi_tel( $label )`: `+15550100000` from "(555) 010-0000".
+
+## Search engines (Rank Math)
+
+Designed pages keep their words in fields, so the page body WordPress stores is empty. The plugin makes SEO tools see the real page:
+
+- **Rank Math content analysis reads the page as visitors see it.** On the edit screen of a page built from fields (a registered template, or the posts page), the form's current values are posted to the page itself as a preview (nothing is saved, never cached, only for someone who can edit the page) and what is inside `<main>` goes to Rank Math through its `rank_math_content` filter. It runs when the screen opens and a moment after every change, so the score follows what the client types; Update saves the score. Filters: `elroi_seo_selector` (default `main`), `elroi_seo_page_from_theme` (which pages), `elroi_seo_analysis` (false turns it off). Markup with `aria-hidden="true"`, `hidden` or `data-elroi-seo="skip"` (decorative copies such as split words or marquee repeats), scripts, styles and SVG icons are left out.
+- **Content AI:** Rank Math's "Content AI" check only passes with a paid Content AI plan and says nothing about the page, so it is left out of the score. Settings > Reading > Rank Math score turns it back on (filter `elroi_seo_skip_content_ai`).
+- **Sitemap photos:** the photos of every image and gallery field go into the page's entry in Rank Math's (or Yoast's) XML sitemap, with their alt text.
+- **Site search** finds pages by the words in their fields, and those pages get an excerpt from their fields when they have none (search results, and Rank Math's `%excerpt%`). Filter `elroi_search_fields` (false turns it off).
+- **Alt text:** `elroi_image()` uses the photo's alt text from the Media Library; when it is empty, the caption, then the title if it reads like words (not `IMG_0423`). Pass `'alt' => ''` for a decorative image. Gallery fields warn about photos without alt text.
+- **Link words:** give the text field that labels a button or link `'link_text' => true`; the form warns when it says nothing about where the link goes ("Learn more", "Click here"; list in the `elroi_vague_link_words` filter).
+- **Inline links:** give a `textarea` or `paragraphs` field `'rich' => true` (the form explains the syntax) and print it with `elroi_rich()` or `elroi_paragraphs( $list, '', true )`: `[our kitchens](/kitchens/)` becomes a link. Internal links help Rank Math's score and visitors.
+
+Theme rules that go with it: one `<h1>` per page and headings in order, the template's real content inside `<main>`, decorative duplicates marked `aria-hidden="true"`.
 
 ## Client access
 

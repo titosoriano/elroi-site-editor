@@ -100,9 +100,12 @@ function elroi_render_field( $f, $name, $val, $ctx ) {
 		return;
 	}
 	$id   = elroi_field_id( $name );
-	$help = trim( $f['help'] . ' ' . elroi_type_help( $type ) );
+	$help = trim( $f['help'] . ' ' . elroi_type_help( $type ) . ( ! empty( $f['rich'] ) ? ' Add a link by typing [the words](/page/).' : '' ) );
 	$desc = $help ? ' aria-describedby="' . esc_attr( $id ) . '-h"' : '';
 	$attr = ! empty( $f['title_source'] ) ? ' data-elroi-title-source' : '';
+	if ( ! empty( $f['link_text'] ) ) {
+		$attr .= ' data-elroi-linktext';
+	}
 	echo '<div class="elroi-field">';
 
 	switch ( $type ) {
@@ -143,7 +146,10 @@ function elroi_render_field( $f, $name, $val, $ctx ) {
 			foreach ( $ids as $gid ) {
 				echo wp_get_attachment_image( $gid, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput
 			}
-			echo '</div><button type="button" class="button" data-elroi-gallery-pick>Choose photos</button></div>';
+			$no_alt = count( array_filter( $ids, fn( $gid ) => '' === trim( (string) get_post_meta( $gid, '_wp_attachment_image_alt', true ) ) ) );
+			echo '</div><button type="button" class="button" data-elroi-gallery-pick>Choose photos</button>';
+			printf( '<p class="elroi-warn" data-elroi-gallery-warn%s>%s</p>', $no_alt ? '' : ' hidden', esc_html( elroi_alt_warning( $no_alt ) ) );
+			echo '</div>';
 			break;
 
 		case 'numbers':
@@ -170,7 +176,38 @@ function elroi_render_field( $f, $name, $val, $ctx ) {
 	if ( $help ) {
 		printf( '<p class="description" id="%s-h">%s</p>', esc_attr( $id ), esc_html( $help ) );
 	}
+	if ( ! empty( $f['link_text'] ) ) {
+		printf( '<p class="elroi-warn" data-elroi-linktext-warn%s>Say where the link goes, e.g. "See our kitchen remodels" instead of "Learn more". Google and screen readers read link words on their own.</p>', elroi_is_vague_link_text( is_scalar( $val ) ? (string) $val : '' ) ? '' : ' hidden' );
+	}
 	echo '</div>';
+}
+
+/**
+ * Words that say nothing about where a link goes ("Learn more", "Click here").
+ * Filter: `elroi_vague_link_words`.
+ */
+function elroi_vague_link_words() {
+	return (array) apply_filters( 'elroi_vague_link_words', array( 'learn more', 'read more', 'click here', 'here', 'more', 'see more', 'view more', 'more info', 'more information', 'details', 'go', 'link', 'this', 'continue', 'click', 'find out more' ) );
+}
+
+/**
+ * Whether link words say nothing about where the link goes.
+ *
+ * @param string $text Link words.
+ */
+function elroi_is_vague_link_text( $text ) {
+	$t = strtolower( trim( preg_replace( '/[^\p{L}\p{N}\s]+/u', ' ', elroi_plain( $text ) ) ) );
+	$t = preg_replace( '/\s+/', ' ', $t );
+	return '' !== $t && in_array( $t, elroi_vague_link_words(), true );
+}
+
+/**
+ * Warning for gallery photos without alt text.
+ *
+ * @param int $n Photos without alt text.
+ */
+function elroi_alt_warning( $n ) {
+	return 1 === $n ? '1 photo has no description (alt text). Add it in the Media Library so Google and screen readers know what it shows.' : $n . ' photos have no description (alt text). Add it in the Media Library so Google and screen readers know what they show.';
 }
 
 /**

@@ -24,6 +24,10 @@ function elroi_saved( $post = null ) {
 	if ( ! $cfg ) {
 		return array();
 	}
+	// Unsaved form values while the edit screen asks for a preview (see includes/seo.php).
+	if ( isset( $GLOBALS['elroi_preview'][ $post->ID ] ) ) {
+		return $GLOBALS['elroi_preview'][ $post->ID ];
+	}
 	$raw  = get_post_meta( $post->ID, $cfg['meta_key'], true );
 	$data = is_string( $raw ) ? json_decode( $raw, true ) : $raw;
 	return is_array( $data ) ? $data : array();
@@ -109,14 +113,54 @@ function elroi_link( $link ) {
 }
 
 /**
- * <img> for an attachment, with its own alt text.
+ * <img> for an attachment, with its own alt text. When the photo has no alt text in the Media
+ * Library, its caption is used, then its title if the title reads like words (not a file name
+ * such as IMG_0423). Pass 'alt' => '' for a decorative image.
  *
  * @param int    $id   Attachment ID.
  * @param string $size Image size.
  * @param array  $attr Attributes.
  */
 function elroi_image( $id, $size = 'large', $attr = array() ) {
-	return $id ? wp_get_attachment_image( (int) $id, $size, false, $attr ) : '';
+	if ( ! $id ) {
+		return '';
+	}
+	$attr = (array) $attr;
+	if ( ! array_key_exists( 'alt', $attr ) && '' === trim( (string) get_post_meta( (int) $id, '_wp_attachment_image_alt', true ) ) ) {
+		$fallback = elroi_alt_fallback( (int) $id );
+		if ( '' !== $fallback ) {
+			$attr['alt'] = $fallback;
+		}
+	}
+	return wp_get_attachment_image( (int) $id, $size, false, $attr );
+}
+
+/**
+ * Alt text for a photo that has none: its caption, or its title when the title reads like words.
+ *
+ * @param int $id Attachment ID.
+ */
+function elroi_alt_fallback( $id ) {
+	$caption = trim( wp_strip_all_tags( (string) wp_get_attachment_caption( $id ) ) );
+	if ( '' !== $caption ) {
+		return $caption;
+	}
+	$title = trim( (string) get_the_title( $id ) );
+	return elroi_title_is_words( $title ) ? $title : '';
+}
+
+/**
+ * Whether a Media Library title reads like a description rather than a file name
+ * ("Team on set" yes; "IMG_0423", "DSC04645", "3L3A5388", "photo-1" no).
+ *
+ * @param string $title Title.
+ */
+function elroi_title_is_words( $title ) {
+	$title = trim( (string) $title );
+	if ( '' === $title || preg_match( '/\d{3,}|\.(jpe?g|png|gif|webp|avif|heic)$/i', $title ) ) {
+		return false;
+	}
+	return 2 <= count( preg_split( '/[\s_-]+/u', $title, -1, PREG_SPLIT_NO_EMPTY ) ) && (bool) preg_match( '/\s/u', $title );
 }
 
 /**
@@ -124,11 +168,12 @@ function elroi_image( $id, $size = 'large', $attr = array() ) {
  *
  * @param array  $list  Paragraphs.
  * @param string $attrs Attributes for each <p>, already escaped.
+ * @param bool   $rich  Turn `[words](/path)` into links (elroi_rich()).
  */
-function elroi_paragraphs( $list, $attrs = '' ) {
+function elroi_paragraphs( $list, $attrs = '', $rich = false ) {
 	$out = '';
 	foreach ( (array) $list as $p ) {
-		$out .= '<p' . ( $attrs ? ' ' . $attrs : '' ) . '>' . elroi_text( $p ) . '</p>';
+		$out .= '<p' . ( $attrs ? ' ' . $attrs : '' ) . '>' . ( $rich ? elroi_rich( $p ) : elroi_text( $p ) ) . '</p>';
 	}
 	return $out;
 }

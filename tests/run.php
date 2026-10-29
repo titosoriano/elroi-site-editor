@@ -261,6 +261,95 @@ remove_filter( 'elroi_se_github_token', '__return_empty_string' );
 remove_filter( 'pre_http_request', $mock, 10 );
 delete_site_transient( 'elroi_se_release' );
 
+// Search engines (includes/seo.php).
+$check( 'plain text fills placeholders and drops marks and link syntax', '10+ of great work' === elroi_plain( '{years} of *great* [work](/work/)' ) );
+$rich = elroi_rich( 'See [our work](/work/), [docs](https://example.org/x) and [bad](javascript:alert(1))' );
+$check( 'rich text links site paths', str_contains( $rich, '<a href="' . esc_url( home_url( '/work/' ) ) . '">our work</a>' ), $rich );
+$check( 'rich text opens other sites in a new tab', str_contains( $rich, '<a href="https://example.org/x" target="_blank" rel="noopener">docs</a>' ), $rich );
+$check( 'rich text drops unsafe links', ! str_contains( $rich, 'javascript' ) && str_contains( $rich, ' and bad' ), $rich );
+$check( 'rich text is escaped', '&lt;b&gt; <a href="' . esc_url( home_url( '/a/' ) ) . '">x</a>' === elroi_rich( '<b> [x](/a/)' ) );
+$plain = elroi_plain_text( $landing );
+$check( 'page words include saved and default text', str_contains( $plain, 'Spring offer' ) && str_contains( $plain, 'First paragraph.' ) && str_contains( $plain, 'Fast' ), $plain );
+$check( 'pages built from fields get an excerpt', str_contains( get_the_excerpt( $landing ), 'Spring offer' ), get_the_excerpt( $landing ) );
+$check( 'the posts page counts as built by the theme', ( function () {
+	$blog = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Blog test' ) );
+	update_option( 'page_for_posts', $blog );
+	$ok = elroi_seo_page_from_theme( $blog ) && elroi_seo_page_from_theme( get_page_by_path( 'landing' ) );
+	update_option( 'page_for_posts', 0 );
+	wp_delete_post( $blog, true );
+	return $ok;
+} )() );
+
+$ids = elroi_image_ids( $landing );
+$check( 'image and gallery fields are found for the sitemap', in_array( (int) ( $imgs[0] ?? 0 ), $ids, true ) && in_array( (int) ( $imgs[1] ?? 0 ), $ids, true ), $ids );
+$sm  = elroi_sitemap_images( array( array( 'src' => wp_get_attachment_url( $imgs[0] ?? 0 ) ) ), $landing->ID );
+$check( 'sitemap photos are added once each', 2 === count( $sm ) && wp_get_attachment_url( $imgs[1] ?? 0 ) === $sm[1]['src'], $sm );
+$check( 'sitemap photos carry their alt text', 'Teal test photo' === ( elroi_sitemap_images( array(), $landing->ID )[0]['alt'] ?? '' ), elroi_sitemap_images( array(), $landing->ID ) );
+
+$tests = array( 'hasContentAI' => true, 'keywordInTitle' => true );
+$check( 'Content AI check is left out by default', array( 'keywordInTitle' => true ) === apply_filters( 'rank_math/researches/tests', $tests, 'post' ) );
+update_option( 'elroi_seo_skip_content_ai', '0' );
+$check( 'Content AI check stays when the setting is off', isset( apply_filters( 'rank_math/researches/tests', $tests, 'post' )['hasContentAI'] ) );
+delete_option( 'elroi_seo_skip_content_ai' );
+
+$check( 'vague link words are caught', elroi_is_vague_link_text( 'Learn more' ) && elroi_is_vague_link_text( ' Read more → ' ) && elroi_is_vague_link_text( 'CLICK HERE' ) );
+$check( 'descriptive link words pass', ! elroi_is_vague_link_text( 'Learn more about our kitchens' ) && ! elroi_is_vague_link_text( '' ) );
+ob_start();
+elroi_render_field( elroi_normalize_field( array( 'label' => 'Button text', 'link_text' => true ), 'b' ), 'elroi[b]', 'Learn more', array( 'root' => array(), 'depth' => 0, 'post' => $landing ) );
+$lt = ob_get_clean();
+$check( 'link text fields warn about vague words', str_contains( $lt, 'data-elroi-linktext' ) && preg_match( '/data-elroi-linktext-warn>/', $lt ), $lt );
+ob_start();
+elroi_render_field( elroi_normalize_field( array( 'label' => 'Button text', 'link_text' => true ), 'b' ), 'elroi[b]', 'See our kitchens', array( 'root' => array(), 'depth' => 0, 'post' => $landing ) );
+$check( 'descriptive link text shows no warning', str_contains( ob_get_clean(), 'data-elroi-linktext-warn hidden' ) );
+
+$check( 'file-name titles are not used as alt text', ! elroi_title_is_words( 'IMG_0423' ) && ! elroi_title_is_words( 'DSC04645' ) && ! elroi_title_is_words( '3L3A5388' ) && ! elroi_title_is_words( 'photo-1.jpg' ) && elroi_title_is_words( 'Crew on set in Newark' ) );
+$no_alt = $imgs[1] ?? 0;
+$old    = get_post_meta( $no_alt, '_wp_attachment_image_alt', true );
+delete_post_meta( $no_alt, '_wp_attachment_image_alt' );
+wp_update_post( array( 'ID' => $no_alt, 'post_title' => 'Navy test photo', 'post_excerpt' => '' ) );
+$check( 'a photo without alt text uses its title when it reads like words', str_contains( elroi_image( $no_alt ), 'alt="Navy test photo"' ), elroi_image( $no_alt ) );
+$check( 'an explicit empty alt stays decorative', str_contains( elroi_image( $no_alt, 'large', array( 'alt' => '' ) ), 'alt=""' ) );
+ob_start();
+elroi_render_field( elroi_normalize_field( array( 'type' => 'gallery', 'label' => 'Photos' ), 'g' ), 'elroi[g]', array( $no_alt ), array( 'root' => array(), 'depth' => 0, 'post' => $landing ) );
+$check( 'gallery warns about photos without alt text', str_contains( ob_get_clean(), '1 photo has no description' ) );
+wp_update_post( array( 'ID' => $no_alt, 'post_title' => 'Test photo 1' ) );
+if ( $old ) {
+	update_post_meta( $no_alt, '_wp_attachment_image_alt', $old );
+}
+
+// The edit screen's analysis request: the page posted with unsaved values, as the signed-in editor.
+$token  = WP_Session_Tokens::get_instance( 1 )->create( time() + 600 );
+$cookie = wp_generate_auth_cookie( 1, time() + 600, 'logged_in', $token );
+$_COOKIE[ LOGGED_IN_COOKIE ] = $cookie;
+$nonce  = wp_create_nonce( 'elroi_seo_' . $landing->ID );
+unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
+list( $form ) = elroi_test_form( $landing );
+$form['elroi']['h1'] = 'Unsaved preview heading';
+$saved_before        = get_post_meta( $landing->ID, '_elroi_content', true );
+$preview             = function ( $n ) use ( $landing, $form, $cookie ) {
+	return wp_remote_post(
+		get_permalink( $landing ),
+		array(
+			'timeout' => 20,
+			'cookies' => array( LOGGED_IN_COOKIE => $cookie ),
+			'body'    => array( 'elroi' => $form['elroi'], 'elroi_seo' => $n, 'elroi_seo_post' => $landing->ID ),
+		)
+	);
+};
+$r = $preview( $nonce );
+$check( 'analysis preview shows unsaved text', str_contains( wp_remote_retrieve_body( $r ), 'Unsaved preview heading' ), substr( wp_remote_retrieve_body( $r ), 0, 300 ) );
+$check( 'analysis preview is never cached', str_contains( (string) wp_remote_retrieve_header( $r, 'cache-control' ), 'no-cache' ), wp_remote_retrieve_header( $r, 'cache-control' ) );
+$check( 'analysis preview saves nothing', get_post_meta( $landing->ID, '_elroi_content', true ) === $saved_before );
+$bad = wp_remote_retrieve_body( $preview( 'wrong' ) );
+$check( 'without a valid nonce the saved page shows', ! str_contains( $bad, 'Unsaved preview heading' ) && str_contains( $bad, 'Spring' ), substr( $bad, 0, 300 ) );
+WP_Session_Tokens::get_instance( 1 )->destroy( $token );
+
+// Site search finds words that live only in fields.
+$s_body = wp_remote_retrieve_body( wp_remote_get( add_query_arg( 's', 'First paragraph', home_url( '/' ) ), array( 'timeout' => 20 ) ) );
+$check( 'site search finds pages by their field text', str_contains( $s_body, '<h1>Landing</h1>' ), substr( $s_body, 0, 400 ) );
+$s_none = wp_remote_retrieve_body( wp_remote_get( add_query_arg( 's', 'zxqv-nothing', home_url( '/' ) ), array( 'timeout' => 20 ) ) );
+$check( 'site search still finds nothing for unknown words', ! str_contains( $s_none, '<h1>Landing</h1>' ) );
+
 // Put the content back.
 foreach ( $backup as $id => $raw ) {
 	$cfg = elroi_template_for( $id );

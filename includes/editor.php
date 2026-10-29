@@ -51,6 +51,7 @@ add_action(
 		wp_enqueue_media();
 		wp_enqueue_style( 'elroi-admin', ELROI_SE_URL . 'assets/admin.css', array(), ELROI_SE_VERSION );
 		wp_enqueue_script( 'elroi-admin', ELROI_SE_URL . 'assets/admin.js', array( 'jquery' ), ELROI_SE_VERSION, true );
+		wp_localize_script( 'elroi-admin', 'elroiAdmin', array( 'vague' => array_values( elroi_vague_link_words() ) ) );
 	}
 );
 

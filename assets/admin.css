@@ -37,3 +37,5 @@
 .elroi-image__alt input { width: 100%; }
 .elroi-gallery { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .elroi-gallery img { width: 72px; height: 72px; object-fit: cover; border-radius: 2px; }
+.elroi-warn { margin: 6px 0 0; padding: 6px 10px; background: #fcf9e8; border-left: 4px solid #dba617; font-size: 12px; }
+.elroi-warn[hidden] { display: none; }

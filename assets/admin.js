@@ -112,12 +112,23 @@
 		frame.on('select', function () {
 			var chosen = frame.state().get('selection').toJSON();
 			box.find('[data-elroi-gallery-ids]').val(chosen.map(function (a) { return a.id; }).join(','));
+			var missing = chosen.filter(function (a) { return !(a.alt || '').trim(); }).length;
+			box.find('[data-elroi-gallery-warn]').prop('hidden', !missing).text(missing === 1
+				? '1 photo has no description (alt text). Add it in the Media Library so Google and screen readers know what it shows.'
+				: missing + ' photos have no description (alt text). Add it in the Media Library so Google and screen readers know what they show.');
 			var prev = box.find('[data-elroi-gallery-preview]').empty();
 			chosen.forEach(function (a) {
 				prev.append($('<img alt="">').attr('src', a.sizes && a.sizes.thumbnail ? a.sizes.thumbnail.url : a.url));
 			});
 		});
 		frame.open();
+	});
+
+	// Link words that say nothing about where the link goes ("Learn more") get a hint.
+	var vague = (window.elroiAdmin && window.elroiAdmin.vague) || [];
+	$(document).on('input', '[data-elroi-linktext]', function () {
+		var t = (this.value || '').replace(/[^\p{L}\p{N}\s]+/gu, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+		$(this).closest('.elroi-field').find('[data-elroi-linktext-warn]').prop('hidden', !t || vague.indexOf(t) === -1);
 	});
 
 	// A required field inside a closed panel cannot show its message: open the panel first.
