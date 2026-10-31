@@ -54,7 +54,7 @@ function elroi_plain( $text ) {
  * @param array $attrs Extra attributes for every link, e.g. array( 'class' => 'link' ).
  */
 function elroi_rich( $text, $attrs = array() ) {
-	$home = wp_parse_url( home_url(), PHP_URL_HOST );
+	$home = elroi_site_hosts();
 	return preg_replace_callback(
 		'/\[([^\]]+)\]\(([^)\s]+)\)/u',
 		function ( $m ) use ( $attrs, $home ) {
@@ -67,7 +67,7 @@ function elroi_rich( $text, $attrs = array() ) {
 				return $m[1];
 			}
 			$extra = '';
-			if ( preg_match( '#^https?://#i', $url ) && wp_parse_url( $url, PHP_URL_HOST ) !== $home ) {
+			if ( preg_match( '#^https?://#i', $url ) && ! in_array( strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) ), $home, true ) ) {
 				$attrs += array(
 					'target' => '_blank',
 					'rel'    => 'noopener',

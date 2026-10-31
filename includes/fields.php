@@ -217,6 +217,14 @@ function elroi_build_value( $f, $in, $root = array() ) {
 		default: // text, heading, textarea, link.
 			$v = elroi_clean_line( $in );
 	}
+	// Addresses on this site are stored as paths, so they follow a change of domain (includes/links.php).
+	if ( 'link' === $f['type'] ) {
+		$v = elroi_local_path( $v );
+	} elseif ( 'textarea' === $f['type'] ) {
+		$v = elroi_local_links( $v );
+	} elseif ( 'paragraphs' === $f['type'] ) {
+		$v = array_map( 'elroi_local_links', $v );
+	}
 	return elroi_is_empty( $v ) ? null : $v;
 }
 

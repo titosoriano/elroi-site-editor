@@ -350,6 +350,67 @@ $check( 'site search finds pages by their field text', str_contains( $s_body, '<
 $s_none = wp_remote_retrieve_body( wp_remote_get( add_query_arg( 's', 'zxqv-nothing', home_url( '/' ) ), array( 'timeout' => 20 ) ) );
 $check( 'site search still finds nothing for unknown words', ! str_contains( $s_none, '<h1>Landing</h1>' ) );
 
+// Safe saving outside the form (includes/safe-save.php).
+$before_patch = elroi_saved( $landing );
+$revs_before  = count( wp_get_post_revisions( $landing->ID ) );
+elroi_update( $landing, array( 'h1' => 'Patched *title*' ) );
+$after_patch = elroi_saved( $landing );
+$check( 'elroi_update changes only the field given', 'Patched *title*' === ( $after_patch['h1'] ?? '' ) && ( $before_patch['sections'] ?? null ) === ( $after_patch['sections'] ?? null ) && ( $before_patch['photos'] ?? null ) === ( $after_patch['photos'] ?? null ), $after_patch );
+$latest = array_values( wp_get_post_revisions( $landing->ID ) )[0] ?? null;
+$check( 'elroi_update keeps a revision of the change', count( wp_get_post_revisions( $landing->ID ) ) > $revs_before && $latest && str_contains( (string) get_post_meta( $latest->ID, '_elroi_content', true ), 'Patched' ) );
+update_post_meta( $landing->ID, '_elroi_content', array( 'style' => 'Light' ) );
+$guarded = elroi_saved( $landing );
+$check( 'writing the meta with an array merges instead of wiping fields', 'Light' === ( $guarded['style'] ?? '' ) && 'Patched *title*' === ( $guarded['h1'] ?? '' ) && ! empty( $guarded['sections'] ), $guarded );
+$refused = update_post_meta( $landing->ID, '_elroi_content', 'not json' );
+$check( 'text that is not JSON is refused', false === $refused && 'Patched *title*' === ( elroi_saved( $landing )['h1'] ?? '' ) );
+elroi_update( $landing, array( 'style' => null ) );
+$check( 'null removes a value so it shows its default', ! isset( elroi_saved( $landing )['style'] ) && ! empty( elroi_saved( $landing )['sections'] ) );
+$home_saved = get_post_meta( $home->ID, '_elroi_content', true );
+$home_h1    = elroi_content( $home )['hero']['h1'];
+elroi_set( 'hero.eyebrow', 'Set by path', $home );
+$check( 'elroi_set changes one value by path', 'Set by path' === elroi_content( $home )['hero']['eyebrow'] && $home_h1 === elroi_content( $home )['hero']['h1'] );
+update_post_meta( $home->ID, '_elroi_content', wp_slash( wp_json_encode( array( 'hero' => array( 'h1' => 'Whole *replace*' ) ) ) ) );
+$check( 'a complete JSON string still replaces the content', array( 'hero' => array( 'h1' => 'Whole *replace*' ) ) === elroi_saved( $home ), elroi_saved( $home ) );
+'' === $home_saved ? delete_post_meta( $home->ID, '_elroi_content' ) : update_post_meta( $home->ID, '_elroi_content', wp_slash( $home_saved ) );
+
+// Abilities for AI agents and MCP tools.
+$get_ab = function_exists( 'wp_get_ability' ) ? wp_get_ability( 'elroi/get-page-content' ) : null;
+$upd_ab = function_exists( 'wp_get_ability' ) ? wp_get_ability( 'elroi/update-page-content' ) : null;
+if ( function_exists( 'wp_get_ability' ) ) {
+	$read = $get_ab ? $get_ab->execute( array( 'page_id' => $landing->ID ) ) : null;
+	$check( 'get-page-content ability returns fields and content', is_array( $read ) && isset( $read['fields']['h1'], $read['content']['h1'] ), $read );
+	$res = $upd_ab ? $upd_ab->execute( array( 'page_id' => $landing->ID, 'changes' => array( 'h1' => 'From an agent' ) ) ) : null;
+	$check( 'update-page-content ability changes only that field', ! is_wp_error( $res ) && 'From an agent' === ( elroi_saved( $landing )['h1'] ?? '' ) && ! empty( elroi_saved( $landing )['sections'] ), is_wp_error( $res ) ? $res->get_error_message() : $res );
+	wp_set_current_user( 0 );
+	$denied = $upd_ab ? $upd_ab->execute( array( 'page_id' => $landing->ID, 'changes' => array( 'h1' => 'Hacked' ) ) ) : null;
+	wp_set_current_user( 1 );
+	$check( 'abilities refuse visitors who cannot edit the page', is_wp_error( $denied ) && 'From an agent' === ( elroi_saved( $landing )['h1'] ?? '' ) );
+}
+
+// Links that survive a change of domain (includes/links.php).
+$here = home_url( '/about/?x=1#team' );
+$check( 'own-site address becomes a path', '/about/?x=1#team' === elroi_local_path( $here ), elroi_local_path( $here ) );
+$check( 'other sites stay full addresses', 'https://example.org/a/' === elroi_local_path( 'https://example.org/a/' ) );
+list( $lf ) = elroi_test_form( $landing );
+$lf['elroi']['intro'] = 'See [our work](' . home_url( '/work/' ) . ') and [a partner](https://example.org/).';
+elroi_test_save( $landing->ID, $lf );
+$check( 'paragraph links to this site are stored as paths', array( 'See [our work](/work/) and [a partner](https://example.org/).' ) === ( elroi_saved( $landing )['intro'] ?? null ), elroi_saved( $landing )['intro'] ?? null );
+list( $hf2 ) = elroi_test_form( $home );
+$first = array_key_first( $hf2['elroi']['services'] );
+$hf2['elroi']['services'][ $first ]['link'] = home_url( '/kitchens-and-baths/' );
+elroi_test_save( $home->ID, $hf2 );
+$check( 'link fields store this site as a path', '/kitchens-and-baths/' === ( elroi_saved( $home )['services'][0]['link'] ?? '' ), elroi_saved( $home )['services'] ?? null );
+$prev_hosts = get_option( 'elroi_previous_hosts', null );
+$prev_home  = get_option( 'elroi_home_host', null );
+update_option( 'elroi_home_host', 'temp-host.example' );
+elroi_note_home_host();
+$check( 'a change of domain is noticed', in_array( 'temp-host.example', (array) get_option( 'elroi_previous_hosts' ), true ) );
+$check( 'links stored with the old domain print with the current one', elroi_link( 'https://temp-host.example/about/' ) === esc_url( home_url( '/about/' ) ), elroi_link( 'https://temp-host.example/about/' ) );
+$old_rich = elroi_rich( '[About us](https://temp-host.example/about/)' );
+$check( 'old-domain links in paragraphs stay on this site, same tab', str_contains( $old_rich, 'href="' . esc_url( home_url( '/about/' ) ) . '"' ) && ! str_contains( $old_rich, '_blank' ), $old_rich );
+null === $prev_hosts ? delete_option( 'elroi_previous_hosts' ) : update_option( 'elroi_previous_hosts', $prev_hosts );
+null === $prev_home ? delete_option( 'elroi_home_host' ) : update_option( 'elroi_home_host', $prev_home );
+
 // Put the content back.
 foreach ( $backup as $id => $raw ) {
 	$cfg = elroi_template_for( $id );

@@ -22,3 +22,4 @@ ElRoi Marketing builds custom WordPress themes, and every client must be able to
 - Do not install ACF, a page builder, or another field plugin for client editing.
 - Do not put tokens, passwords or client data in the plugin repository: it is public.
 - Do not change a field's key on a live site without moving its stored data: the key is where the content is saved.
+- Do not write the page meta (`_elroi_content`) by hand to change a few fields: use `elroi_update()` / `elroi_set()` or the `elroi/update-page-content` ability, which keep every other field and a revision.

@@ -100,12 +100,13 @@ function elroi_heading( $text, $tag = 'em' ) {
 }
 
 /**
- * Escaped URL from a site path (/services/) or a full URL.
+ * Escaped URL from a site path (/services/) or a full URL. A full address on this site, including
+ * an earlier domain of it, is printed with the current domain (see includes/links.php).
  *
  * @param mixed $link Link.
  */
 function elroi_link( $link ) {
-	$link = is_scalar( $link ) ? trim( (string) $link ) : '';
+	$link = is_scalar( $link ) ? elroi_local_path( trim( (string) $link ) ) : '';
 	if ( '' === $link ) {
 		return '';
 	}
