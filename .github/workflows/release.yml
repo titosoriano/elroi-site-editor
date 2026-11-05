@@ -1,6 +1,7 @@
 # Publishes a release with elroi-site-editor.zip attached whenever the Version in the plugin header
 # changes on main (or when run by hand from the Actions tab). Sites running the plugin then show
-# "Update available" (includes/updater.php). Nothing to drag into GitHub by hand.
+# "Update available" (includes/updater.php). Nothing to drag into GitHub by hand. The checks
+# (checks.yml: PHP lint and every test) run first; a version that fails them is never published.
 name: Release
 on:
   push:
@@ -11,7 +12,10 @@ permissions:
   contents: write
 concurrency: release
 jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
   release:
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

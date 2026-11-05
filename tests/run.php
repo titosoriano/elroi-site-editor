@@ -387,6 +387,41 @@ if ( function_exists( 'wp_get_ability' ) ) {
 	$check( 'abilities refuse visitors who cannot edit the page', is_wp_error( $denied ) && 'From an agent' === ( elroi_saved( $landing )['h1'] ?? '' ) );
 }
 
+// Recommended plugins (includes/recommended.php): what every new ElRoi site needs.
+add_filter( 'elroi_on_litespeed', '__return_false' );
+$rec  = elroi_recommended_status();
+$miss = array_keys( elroi_recommended_missing() );
+$check( 'recommended plugins: the ElRoi set is listed with its wordpress.org slugs', array( 'seo-by-rank-math', 'litespeed-cache', 'better-wp-security', 'updraftplus', 'fluent-smtp', 'google-site-kit', 'novamira' ) === array_keys( $rec ), array_keys( $rec ) );
+$check( 'recommended plugins: on a fresh site all required and recommended ones are missing; optional ones and LiteSpeed off a LiteSpeed server are not nagged', array( 'seo-by-rank-math', 'better-wp-security', 'updraftplus', 'fluent-smtp', 'google-site-kit' ) === $miss, $miss );
+$check( 'recommended plugins: install commands for agents; plugins outside wordpress.org get none', 'wp plugin install seo-by-rank-math --activate' === $rec['seo-by-rank-math']['cli'] && '' === $rec['novamira']['cli'] && 'missing' === $rec['novamira']['state'] && 'https://novamira.ai/' === $rec['novamira']['source'] );
+remove_filter( 'elroi_on_litespeed', '__return_false' );
+add_filter( 'elroi_on_litespeed', '__return_true' );
+$check( 'recommended plugins: on a LiteSpeed server LiteSpeed Cache is recommended too', in_array( 'litespeed-cache', array_keys( elroi_recommended_missing() ), true ) );
+remove_filter( 'elroi_on_litespeed', '__return_true' );
+add_filter(
+	'elroi_recommended_plugins',
+	$only_self = fn() => array(
+		'elroi-site-editor' => array( 'name' => 'ElRoi Site Editor', 'file' => 'elroi-site-editor/elroi-site-editor.php', 'level' => 'required', 'why' => 'x', 'setup' => 'y' ),
+	)
+);
+$self = elroi_recommended_status()['elroi-site-editor'];
+$check( 'recommended plugins: an active plugin is reported active and is not missing (the list is filterable)', 'active' === $self['state'] && '' === $self['cli'] && ! elroi_recommended_missing() && 'good' === elroi_recommended_health_test()['status'] );
+remove_filter( 'elroi_recommended_plugins', $only_self );
+$check( 'recommended plugins: Site Health asks for the missing ones', 'recommended' === elroi_recommended_health_test()['status'] && str_contains( elroi_recommended_health_test()['description'], 'Rank Math SEO' ) && isset( apply_filters( 'site_status_tests', array( 'direct' => array() ) )['direct']['elroi_recommended'] ) );
+ob_start();
+elroi_recommended_page();
+$rec_page = ob_get_clean();
+$check( 'recommended plugins: the screen has Install buttons, a Download link for Novamira and the setup notes', preg_match( '/update\.php\?action=install-plugin&(amp;|#038;)plugin=seo-by-rank-math&(amp;|#038;)_wpnonce=/', $rec_page ) && str_contains( $rec_page, 'href="https://novamira.ai/"' ) && str_contains( $rec_page, 'keep at least 7 file and 14 database copies' ) );
+if ( function_exists( 'wp_get_ability' ) ) {
+	$rec_ab = wp_get_ability( 'elroi/recommended-plugins' );
+	$out    = $rec_ab ? $rec_ab->execute( array() ) : null;
+	$check( 'recommended-plugins ability lists states and what is missing', is_array( $out ) && isset( $out['plugins']['updraftplus']['state'], $out['plugins']['updraftplus']['setup'] ) && in_array( 'updraftplus', $out['missing'], true ), is_wp_error( $out ) ? $out->get_error_message() : $out );
+	wp_set_current_user( 0 );
+	$denied = $rec_ab ? $rec_ab->execute( array() ) : null;
+	wp_set_current_user( 1 );
+	$check( 'recommended-plugins ability refuses visitors', is_wp_error( $denied ) );
+}
+
 // Links that survive a change of domain (includes/links.php).
 $here = home_url( '/about/?x=1#team' );
 $check( 'own-site address becomes a path', '/about/?x=1#team' === elroi_local_path( $here ), elroi_local_path( $here ) );

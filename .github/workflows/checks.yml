@@ -1,0 +1,51 @@
+# Automatic checks on every change: PHP lint, then every test in tests/run.php on a fresh
+# WordPress Playground with the demo theme (the same run as AGENTS.md > Testing). A red X on a
+# commit means a check failed: open the run to see which one. The release workflow runs these
+# first and never publishes a version that fails them.
+name: Checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: elroi-site-editor
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: PHP lint
+        working-directory: elroi-site-editor
+        run: |
+          errors=$(find . -name '*.php' -not -path './dist/*' -exec php -l {} \; 2>&1 | grep -v '^No syntax errors' || true)
+          [ -z "$errors" ] || { echo "$errors"; exit 1; }
+      - name: Tests on WordPress Playground
+        working-directory: elroi-site-editor
+        run: |
+          npx -y @wp-playground/cli@3.1.56 server --port=9400 --login --blueprint=tests/blueprint.json \
+            --mount="$PWD:/wordpress/wp-content/plugins/elroi-site-editor" \
+            --mount="$PWD/examples/demo-theme:/wordpress/wp-content/themes/elroi-demo" \
+            --mount="$PWD/tests:/wordpress/elroi-tests" > /tmp/playground.log 2>&1 &
+          for i in $(seq 1 120); do grep -q 'Ready!' /tmp/playground.log && break; sleep 2; done
+          grep -q 'Ready!' /tmp/playground.log || { cat /tmp/playground.log; exit 1; }
+          curl -s --max-time 600 http://127.0.0.1:9400/elroi-tests/run.php > /tmp/result.json || true
+          python3 - <<'PY'
+          import json, os, sys
+          raw = open('/tmp/result.json').read()
+          try:
+              r = json.loads(raw[raw.index('{'):])
+          except Exception:
+              print('The test page did not return results:'); print(raw[:3000]); sys.exit(1)
+          lines = [f"**{r['passed']} passed, {r['failed']} failed**"] + [f"- FAILED: {f['check']}" + (f" ({json.dumps(f.get('info'))[:300]})" if f.get('info') is not None else '') for f in r['fails']]
+          print('\n'.join(lines))
+          open(os.environ['GITHUB_STEP_SUMMARY'], 'a').write('\n'.join(lines) + '\n')
+          sys.exit(1 if r['failed'] or not r['passed'] else 0)
+          PY

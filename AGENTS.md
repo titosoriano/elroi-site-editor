@@ -4,6 +4,30 @@ ElRoi Site Editor is [ElRoi Marketing](https://elroi.marketing/)'s WordPress plu
 
 Use it on every new client site ElRoi builds. Install and activate the plugin first, then build the theme around it.
 
+## Starting work on a site (agents: do this first)
+
+1. **Recommended plugins.** On every WordPress site, and always on a new install, read the `elroi/recommended-plugins` ability (or `elroi_recommended_status()` through the site's MCP, or Plugins > ElRoi recommended) and **tell the user which plugins are missing or inactive before doing anything else**, with why each is needed. Install them only with the user's OK (`wp plugin install <slug> --activate`, given in each entry's `cli`), then walk through each one's `setup` note. Plugins that need the user's own accounts (Google for Site Kit and UpdraftPlus remote storage, the mailbox for FluentSMTP) are finished by the user: say exactly where to click.
+2. **Theme.** New client sites are child themes of ElRoi Starter (`titosoriano/elroi-starter`, public): run its `bin/new-client.sh` and follow its AGENTS.md > Starting a client site. Never copy the starter into a client repository.
+3. **Backups before big changes.** With ElRoi Starter, check `es_backup_status()` first (see the starter's AGENTS.md > Rules).
+4. **Speed.** On LiteSpeed hosts (Hostinger), apply the starter's speed settings once LiteSpeed Cache is active: `es_speed_status()` / `es_speed_apply()`, or Tools > Site Health > Speed settings.
+5. **Checks.** Every repository (this plugin, the starter, each client theme) runs its tests on GitHub on every push (`.github/workflows/checks.yml`). Look at the result of the last commit before deploying, and keep it green.
+
+## Recommended plugins
+
+`includes/recommended.php` holds the list ElRoi installs on every client site (filter `elroi_recommended_plugins` to add, change or remove entries; each has `name`, `file`, `level`, `why`, `setup`, `source`, `applies`):
+
+| Plugin (slug) | Level | Why | After installing |
+|---|---|---|---|
+| Rank Math SEO (`seo-by-rank-math`) | required | Titles, descriptions, sitemaps, schema, page score | Setup wizard; Local SEO "Organization"; Instant Indexing for Bing; every page 80+ |
+| Kadence Security (`better-wp-security`) | required | Brute-force protection, two-factor, hardening | Brute force + 2FA for admins; never hide the login page (it cuts off MCP) |
+| UpdraftPlus (`updraftplus`) | required | Off-site daily backups | Daily files + database, keep 7 / 14, Google Drive or Dropbox, Backup Now once |
+| LiteSpeed Cache (`litespeed-cache`) | recommended, LiteSpeed servers only | Page cache | Starter's Site Health "Speed settings" button; never JS delay/combine, UCSS or its lazy load |
+| FluentSMTP (`fluent-smtp`) | recommended | Form and password emails through a real mailbox | Can wait until the design is done, or skip with a CRM form; Hostinger: smtp.hostinger.com, 465, SSL |
+| Site Kit by Google (`google-site-kit`) | recommended | Search Console and Analytics | Connect after the final domain is live |
+| Novamira (`novamira`, from novamira.ai) | optional | AI agent access through MCP | Upload, connect with OAuth; remove or revoke at handover if the client should not have agent access |
+
+Plugins > **ElRoi recommended** shows each one's state with Install / Activate buttons and the setup notes. Administrators get a notice on the Dashboard and Plugins screen while a required or recommended plugin is missing (dismissible; it returns when the missing set changes), and Tools > Site Health reports it. Do not add plugins that duplicate these (a second SEO, cache, security or backup plugin), a page builder or a field plugin.
+
 ## Rules when building a theme with it
 
 - **Never hard-code client copy, photos or contact facts in templates.** Every heading, paragraph, list, button text that may change, photo, phone, address and email comes from a registered field or a Site Setting. Layout markup, class names and fixed UI words ("Read more", "Menu") stay in the template.
@@ -100,7 +124,7 @@ Never write the page meta directly with a few fields: that replaces the whole pa
 
 - `elroi_update( $post, $changes )`: changes only what `$changes` names. Named keys (groups) merge key by key, lists (repeaters, paragraphs, galleries) are replaced whole, `null` removes a value so it shows its default. Keeps a revision before and after.
 - `elroi_set( 'hero.h1', 'New *title*', $post )`: one value by dot path (named keys only; change a repeater item by passing the whole list to `elroi_update()`).
-- Abilities (WordPress 6.9+, for MCP and AI agents): `elroi/get-page-content` (field outline, stored changes, full content) and `elroi/update-page-content` (`page_id`, `changes`, same rules as `elroi_update()`). Both need the right to edit that page; filter `elroi_abilities` (false) turns them off.
+- Abilities (WordPress 6.9+, for MCP and AI agents): `elroi/get-page-content` (field outline, stored changes, full content) and `elroi/update-page-content` (`page_id`, `changes`, same rules as `elroi_update()`). Both need the right to edit that page. `elroi/recommended-plugins` lists the recommended plugins and their state (needs the right to install or activate plugins). Filter `elroi_abilities` (false) turns them all off.
 - A guard on the meta: `update_post_meta()` with an array is merged into the stored fields instead of replacing them, and a string that is not valid JSON is refused. A complete JSON string still replaces the content on purpose (migrations).
 
 ## Links and domain changes
@@ -140,11 +164,11 @@ curl -s http://127.0.0.1:9400/elroi-tests/run.php          # JSON: passed / fail
 open http://127.0.0.1:9400/elroi-tests/login.php            # signs in as admin (local only)
 ```
 
-Playground needs Node 22 (it fails on Node 26). Every change must keep all checks passing. On a client site, the same round-trip check applies: render each page's form, post it back unchanged, and confirm the stored content and the rendered page are identical.
+Playground needs Node 22 (it fails on Node 26). Every change must keep all checks passing. The same run happens on GitHub on every push and pull request (`.github/workflows/checks.yml`, PHP lint first); a red X on a commit names the failed check in the run summary. Add a check to `tests/run.php` for every new rule. On a client site, the same round-trip check applies: render each page's form, post it back unchanged, and confirm the stored content and the rendered page are identical.
 
 ## Releases and updates
 
-- Bump `Version:` and `ELROI_SE_VERSION` in `elroi-site-editor.php` and push to `main`. `.github/workflows/release.yml` then lints, builds `dist/elroi-site-editor.zip` (without tests/examples) with `bin/release.sh` and publishes release `vX.Y.Z` with the zip attached; every site gets "Update available". Never attach zips by hand; if a release lacks its zip, run the workflow from the Actions tab (it uploads to the existing release). The workflow skips when the release already has its zip.
+- Bump `Version:` and `ELROI_SE_VERSION` in `elroi-site-editor.php` and push to `main`. `.github/workflows/release.yml` then runs the checks (a failing version is never published), lints, builds `dist/elroi-site-editor.zip` (without tests/examples) with `bin/release.sh` and publishes release `vX.Y.Z` with the zip attached; every site gets "Update available". Never attach zips by hand; if a release lacks its zip, run the workflow from the Actions tab (it uploads to the existing release). The workflow skips when the release already has its zip.
 - Sites update from the public repo `titosoriano/elroi-site-editor` through the normal WordPress Update button, with nothing to set up. The check is cached for 6 hours (GitHub allows 60 anonymous API requests per hour per server). Optional: a read-only token in the site's `wp-config.php` (`define( 'ELROI_SE_GITHUB_TOKEN', '...' );`) lifts that limit and is required only if the repo is made private again. Never commit a token.
 - The repository is public: never commit client data, passwords, tokens or site URLs that should stay private.
 - Data format changes must stay backward compatible: existing pages must render the same after an update.

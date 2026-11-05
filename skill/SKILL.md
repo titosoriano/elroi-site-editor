@@ -9,13 +9,13 @@ ElRoi Marketing builds custom WordPress themes, and every client must be able to
 
 ## When building or changing a client theme
 
-0. For a new client, start from the **ElRoi Starter** theme: on GitHub, `titosoriano/elroi-starter` > "Use this template" > a private repo named after the client. Its `AGENTS.md` explains branding (`assets/css/tokens.css`), templates, the lead form (HighLevel, Turnstile) and local tests.
-
+0. **First, on any WordPress site:** check the recommended plugins (the `elroi/recommended-plugins` ability through the site's MCP, or Plugins > ElRoi recommended) and tell the user which are missing or inactive, and why each matters, before other work. Install them only with the user's OK, then follow each one's setup note (`reference.md` > Recommended plugins).
+   For a new client, start from **ElRoi Starter** (`titosoriano/elroi-starter`, public): `sh bin/new-client.sh <client-slug> "<Client Name>"` creates a child theme in a new private repo named after the client, with automatic checks on GitHub. Its `AGENTS.md` explains branding (`assets/css/tokens.css`), templates, motion (`'load' => 'auto'`), the form (designed first, CRM connected last), speed settings, backups and tests.
 1. Make sure the plugin is installed and active (public repo `titosoriano/elroi-site-editor`; install the `elroi-site-editor.zip` of the latest release). Check with `wp plugin list` or the site's MCP.
 2. Read `reference.md` next to this file (the full field reference and rules). It is a copy of the plugin's `AGENTS.md`; if the plugin checkout is available, its `AGENTS.md` is the newest version.
 3. Design the page first, then list every piece of copy and every photo on it, and register them with `elroi_register_template()` in the theme's `functions.php` (defaults = the designed copy). Contact facts used site-wide go in `elroi_register_settings()`.
 4. Print every value with `elroi_text()`, `elroi_heading()`, `elroi_paragraphs()`, `elroi_link()` or `elroi_image()`. Never hard-code client copy or photos in templates, never echo raw values.
-5. Verify: each page renders complete with an empty database (defaults), and saving each form unchanged leaves the stored content and the rendered HTML identical. Then create nothing else: the agency creates the client's Editor account.
+5. Verify: each page renders complete with an empty database (defaults), and saving each form unchanged leaves the stored content and the rendered HTML identical. Every repo runs its `tests/run.php` on GitHub on every push (`.github/workflows/checks.yml`): deploy only commits with a green check. Then create nothing else: the agency creates the client's Editor account.
 
 ## Do not
 

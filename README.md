@@ -76,6 +76,8 @@ Every field has a default (the copy the page was designed with), so a new page i
 3. Use a theme that registers its fields (see [`examples/demo-theme`](examples/demo-theme)).
 4. Give the client a user with the **Editor** role.
 
+**Recommended plugins:** Plugins > **ElRoi recommended** lists the plugins every ElRoi site uses (Rank Math SEO, Kadence Security, UpdraftPlus, LiteSpeed Cache on LiteSpeed hosts, FluentSMTP, Site Kit by Google; Novamira optional for AI agents), with Install buttons and what to set up after each. A notice reminds administrators while any is missing.
+
 Updates arrive through the normal WordPress **Update** button: the plugin checks this repository's releases, with nothing to configure.
 
 ## For developers and AI agents
@@ -94,7 +96,7 @@ mise exec node@22 -- npx -y @wp-playground/cli@3.1.56 server --port=9400 --login
 curl -s http://127.0.0.1:9400/elroi-tests/run.php   # every check must pass
 ```
 
-Releases publish themselves: bump the version in `elroi-site-editor.php`, push to `main`, and the Release workflow builds `elroi-site-editor.zip` and attaches it to a new GitHub release.
+The same checks run on GitHub on every push and pull request (Actions > Checks). Releases publish themselves: bump the version in `elroi-site-editor.php`, push to `main`, and the Release workflow runs the checks, builds `elroi-site-editor.zip` and attaches it to a new GitHub release. A version that fails a check is never published.
 
 ## Requirements
 
