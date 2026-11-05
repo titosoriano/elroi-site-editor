@@ -100,7 +100,7 @@ function elroi_render_field( $f, $name, $val, $ctx ) {
 		return;
 	}
 	$id   = elroi_field_id( $name );
-	$help = trim( $f['help'] . ' ' . elroi_type_help( $type ) . ( ! empty( $f['rich'] ) ? ' Add a link by typing [the words](/page/).' : '' ) );
+	$help = trim( $f['help'] . ' ' . elroi_type_help( $type ) . ( 'embed' === $type ? ' Paste the widget address or its embed code. Allowed sites: ' . implode( ', ', elroi_embed_hosts( $f ) ) . '.' : '' ) . ( ! empty( $f['rich'] ) ? ' Add a link by typing [the words](/page/).' : '' ) );
 	$desc = $help ? ' aria-describedby="' . esc_attr( $id ) . '-h"' : '';
 	$attr = ! empty( $f['title_source'] ) ? ' data-elroi-title-source' : '';
 	if ( ! empty( $f['link_text'] ) ) {
@@ -165,6 +165,7 @@ function elroi_render_field( $f, $name, $val, $ctx ) {
 		default:
 			$input = array(
 				'url'    => 'url',
+				'embed'  => 'text',
 				'email'  => 'email',
 				'number' => 'text',
 			)[ $type ] ?? 'text';

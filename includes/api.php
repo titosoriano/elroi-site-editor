@@ -100,6 +100,57 @@ function elroi_heading( $text, $tag = 'em' ) {
 }
 
 /**
+ * Hosts an `embed` field accepts: the field's own `hosts` plus the `elroi_embed_hosts` filter.
+ * Widgets run their own code on the page, so only add hosts the agency trusts.
+ *
+ * @param array $f Field (optional).
+ * @return string[]
+ */
+function elroi_embed_hosts( $f = array() ) {
+	$hosts = array_merge(
+		array( 'widgets.gaf.com', 'www.google.com', 'calendly.com', 'www.youtube-nocookie.com', 'player.vimeo.com' ),
+		(array) ( $f['hosts'] ?? array() )
+	);
+	return array_values( array_unique( array_map( 'strtolower', (array) apply_filters( 'elroi_embed_hosts', $hosts, $f ) ) ) );
+}
+
+/**
+ * A widget address if it is https and its host is allowed, else ''. Accepts a pasted <iframe> code.
+ *
+ * @param mixed $in Address or embed code.
+ * @param array $f  Field (optional, for its `hosts`).
+ */
+function elroi_embed_url( $in, $f = array() ) {
+	$in = trim( is_scalar( $in ) ? (string) $in : '' );
+	if ( preg_match( '/<iframe\b[^>]*\ssrc=(["\'])(.*?)\1/is', $in, $m ) ) {
+		$in = html_entity_decode( $m[2], ENT_QUOTES, 'UTF-8' );
+	}
+	$url  = esc_url_raw( $in, array( 'https' ) );
+	$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+	return $url && in_array( $host, elroi_embed_hosts( $f ), true ) ? $url : '';
+}
+
+/**
+ * A lazy-loaded <iframe> for a widget address, or '' when its host is not allowed.
+ *
+ * @param string $url   Address from an `embed` field.
+ * @param array  $attrs Attributes: title (required for screen readers), class, style, hosts...
+ */
+function elroi_embed( $url, $attrs = array() ) {
+	$url = elroi_embed_url( $url, $attrs );
+	if ( '' === $url ) {
+		return '';
+	}
+	unset( $attrs['hosts'] );
+	$attrs += array( 'title' => 'Embedded widget', 'loading' => 'lazy', 'referrerpolicy' => 'strict-origin-when-cross-origin', 'allow' => 'fullscreen' );
+	$out    = '<iframe src="' . esc_url( $url ) . '"';
+	foreach ( $attrs as $k => $v ) {
+		$out .= ' ' . sanitize_key( $k ) . '="' . esc_attr( $v ) . '"';
+	}
+	return $out . '></iframe>';
+}
+
+/**
  * Escaped URL from a site path (/services/) or a full URL. A full address on this site, including
  * an earlier domain of it, is printed with the current domain (see includes/links.php).
  *

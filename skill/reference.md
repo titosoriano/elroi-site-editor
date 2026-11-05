@@ -90,6 +90,7 @@ Every field: `type` (default `text`), `label`, `help`, `default`, `half` (true: 
 | `lines` | list of strings | One per line (checklists, town lists, categories). |
 | `link` | string | Site path (`/services/`) or full URL; addresses of this site are stored as paths. Print with `elroi_link()`. |
 | `url`, `email` | string | Validated. |
+| `embed` | string | The https address of a widget (manufacturer color tool, map, booking calendar). Only hosts in `elroi_embed_hosts()` are kept: widgets.gaf.com, www.google.com, calendly.com, www.youtube-nocookie.com, player.vimeo.com, plus the field's `hosts` and the `elroi_embed_hosts` filter. A pasted `<iframe>` code is reduced to its address. Print with `elroi_embed( $url, array( 'title' => '...' ) )`, a lazy iframe ('' when the host is not allowed). |
 | `number` | int or float | |
 | `numbers` | list of numbers | Fixed list with `labels` (e.g. Across, Down, Zoom) and a `default` list; blanks take the default. |
 | `select` | string | `options` list. |

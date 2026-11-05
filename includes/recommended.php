@@ -37,7 +37,7 @@ function elroi_recommended_plugins() {
 			'file'  => 'seo-by-rank-math/rank-math.php',
 			'level' => 'required',
 			'why'   => 'Titles, descriptions, sitemaps, structured data and the page score. ElRoi Site Editor makes it read designed pages as visitors see them.',
-			'setup' => 'Run the setup wizard (Easy mode is fine). Titles & Meta > Local SEO: "Organization" with the business details. Turn on the Instant Indexing module for Bing (IndexNow). Keep every page and post at 80+.',
+			'setup' => 'Run the setup wizard (Easy mode is fine). Titles & Meta > Local SEO: "Organization" with the business details. Turn on the Instant Indexing module for Bing (IndexNow). For AI answers: General Settings > Edit robots.txt allows the AI search crawlers (GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, PerplexityBot, Google-Extended, Applebot-Extended, Bingbot), and the LLMS Txt module (with a short "About" block: services, area, phone, estimate link) serves /llms.txt. Keep every page and post at 80+.',
 		),
 		'litespeed-cache'    => array(
 			'name'    => 'LiteSpeed Cache',

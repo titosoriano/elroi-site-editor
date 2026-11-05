@@ -496,6 +496,20 @@ $check( 'rank math check: a connected account passes', ! elroi_rank_math_blocked
 delete_option( 'rank_math_connect_data' );
 null === $rm_skip ? delete_option( 'rank_math_registration_skip' ) : update_option( 'rank_math_registration_skip', $rm_skip );
 
+// Embed field: only https addresses on allowed hosts; a pasted <iframe> code keeps its address.
+$em_f = elroi_normalize_field( array( 'type' => 'embed', 'label' => 'Widget' ), 'widget' );
+$check( 'embed: an allowed https address is kept', 'https://widgets.gaf.com/hdz-widget' === elroi_build_value( $em_f, ' https://widgets.gaf.com/hdz-widget ' ) );
+$check( 'embed: other hosts and plain http are dropped', null === elroi_build_value( $em_f, 'https://evil.example.com/x' ) && null === elroi_build_value( $em_f, 'http://widgets.gaf.com/hdz-widget' ) && null === elroi_build_value( $em_f, 'javascript:alert(1)' ) );
+$check( 'embed: a pasted <iframe> code is reduced to its address', 'https://widgets.gaf.com/hdz-widget?a=1&b=2' === elroi_build_value( $em_f, '<iframe width="100%" src="https://widgets.gaf.com/hdz-widget?a=1&amp;b=2" frameborder="0"></iframe>' ) );
+$em_f2 = elroi_normalize_field( array( 'type' => 'embed', 'hosts' => array( 'tools.example.com' ) ), 'widget' );
+$check( 'embed: a field\'s own hosts are allowed too', 'https://tools.example.com/w' === elroi_build_value( $em_f2, 'https://tools.example.com/w' ) && null === elroi_build_value( $em_f, 'https://tools.example.com/w' ) );
+$em_html = elroi_embed( 'https://widgets.gaf.com/hdz-widget', array( 'title' => 'Shingle colors', 'class' => 'x' ) );
+$check( 'embed: elroi_embed() prints a lazy iframe with a title, and nothing for a host that is not allowed', str_starts_with( $em_html, '<iframe src="https://widgets.gaf.com/hdz-widget"' ) && str_contains( $em_html, 'title="Shingle colors"' ) && str_contains( $em_html, 'loading="lazy"' ) && '' === elroi_embed( 'https://evil.example.com/' ), $em_html );
+ob_start();
+elroi_render_field( $em_f, 'elroi[widget]', 'https://widgets.gaf.com/hdz-widget', array( 'root' => array(), 'depth' => 0, 'post' => null ) );
+$em_form = ob_get_clean();
+$check( 'embed: the form field lists the allowed sites', str_contains( $em_form, 'value="https://widgets.gaf.com/hdz-widget"' ) && str_contains( $em_form, 'Allowed sites: widgets.gaf.com' ), $em_form );
+
 $failed = array_values( array_filter( $results, fn( $r ) => ! $r['ok'] ) );
 echo wp_json_encode(
 	array(

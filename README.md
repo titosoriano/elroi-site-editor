@@ -25,6 +25,7 @@ Page builders give clients too much freedom: one wrong drag and the page is brok
 - **Undo for everything**: each update is saved as a revision that can be compared and restored.
 - **A safety net**: designed pages cannot be deleted, unpublished, moved or switched to another template from a client account.
 - **Good SEO scores without extra work**: Rank Math scores the page as visitors see it and updates as the client types, field photos go into the sitemap, site search finds the words in every field, and link and photo descriptions get gentle warnings. Pages can keep the full search phrase in their title while menus and breadcrumbs show a short name, and Site Health warns when Rank Math is active but printing nothing (it does that until an account is connected or registration is skipped).
+- **Widgets without code**: an `embed` field takes a manufacturer color tool, map or booking calendar by its address or pasted embed code, from an allowed list of sites only.
 - **A built-in guide**: "How to edit your website" in wp-admin, written for non-technical people and generated from the site's own pages.
 
 ![Project photos with categories](docs/photos.png)

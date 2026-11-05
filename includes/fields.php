@@ -7,7 +7,9 @@
  *   paragraphs (blank line between paragraphs), lines (one item per line), url, link (site path or
  *   URL), email, number, select (options), checkboxes (options, or options_from: the key of a
  *   `lines` field at the top level), image (attachment ID), gallery (attachment IDs),
- *   numbers (a fixed list of numbers, one per label), group (fields), repeater (fields, item).
+ *   numbers (a fixed list of numbers, one per label), embed (the https address of a widget from an
+ *   allowed host, see elroi_embed_hosts(); a pasted <iframe> code is reduced to its address),
+ *   group (fields), repeater (fields, item).
  *
  * Empty values are not stored; a value equal to its default is not stored either, so a page only
  * keeps what was changed. Reading lays the stored values over the defaults: an empty text or an
@@ -156,6 +158,9 @@ function elroi_build_value( $f, $in, $root = array() ) {
 			break;
 		case 'url':
 			$v = esc_url_raw( trim( is_scalar( $in ) ? (string) $in : '' ) );
+			break;
+		case 'embed':
+			$v = elroi_embed_url( $in, $f );
 			break;
 		case 'email':
 			$v = sanitize_email( is_scalar( $in ) ? (string) $in : '' );
