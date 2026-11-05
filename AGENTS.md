@@ -144,7 +144,7 @@ Playground needs Node 22 (it fails on Node 26). Every change must keep all check
 
 ## Releases and updates
 
-- Bump `Version:` and `ELROI_SE_VERSION` in `elroi-site-editor.php`, commit, then `bin/release.sh --publish` (builds `dist/elroi-site-editor.zip` without tests/examples and publishes a GitHub release `vX.Y.Z` with it).
+- Bump `Version:` and `ELROI_SE_VERSION` in `elroi-site-editor.php` and push to `main`. `.github/workflows/release.yml` then lints, builds `dist/elroi-site-editor.zip` (without tests/examples) with `bin/release.sh` and publishes release `vX.Y.Z` with the zip attached; every site gets "Update available". Never attach zips by hand; if a release lacks its zip, run the workflow from the Actions tab (it uploads to the existing release). The workflow skips when the release already has its zip.
 - Sites update from the public repo `titosoriano/elroi-site-editor` through the normal WordPress Update button, with nothing to set up. The check is cached for 6 hours (GitHub allows 60 anonymous API requests per hour per server). Optional: a read-only token in the site's `wp-config.php` (`define( 'ELROI_SE_GITHUB_TOKEN', '...' );`) lifts that limit and is required only if the repo is made private again. Never commit a token.
 - The repository is public: never commit client data, passwords, tokens or site URLs that should stay private.
 - Data format changes must stay backward compatible: existing pages must render the same after an update.

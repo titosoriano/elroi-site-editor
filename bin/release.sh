@@ -1,10 +1,13 @@
 #!/bin/sh
-# Build dist/elroi-site-editor.zip and publish it as a GitHub release of the version in the plugin header.
+# Build dist/elroi-site-editor.zip. Publishing is automatic: bump Version (and ELROI_SE_VERSION) in
+# elroi-site-editor.php, push to main, and .github/workflows/release.yml creates the release with the zip.
+# --publish does the same from a laptop with the gh CLI.
 set -e
 cd "$(dirname "$0")/.."
 V=$(sed -n 's/^ \* Version: *//p' elroi-site-editor.php | tr -d ' ')
 grep -q "ELROI_SE_VERSION', '$V'" elroi-site-editor.php || { echo "ELROI_SE_VERSION does not match Version: $V"; exit 1; }
-for f in $(find . -name '*.php' -not -path './dist/*'); do php -l "$f" | grep -v 'No syntax' || true; done
+ERR=$(find . -name '*.php' -not -path './dist/*' -exec php -l {} \; 2>&1 | grep -v 'No syntax' || true)
+[ -z "$ERR" ] || { echo "$ERR"; exit 1; }
 rm -rf dist && mkdir -p dist/elroi-site-editor
 cp -R elroi-site-editor.php includes assets README.md AGENTS.md dist/elroi-site-editor/
 (cd dist && zip -rq elroi-site-editor.zip elroi-site-editor -x '*.DS_Store')

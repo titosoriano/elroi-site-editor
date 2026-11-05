@@ -94,7 +94,7 @@ mise exec node@22 -- npx -y @wp-playground/cli@3.1.56 server --port=9400 --login
 curl -s http://127.0.0.1:9400/elroi-tests/run.php   # every check must pass
 ```
 
-Releases are built and published with `bin/release.sh --publish` after bumping the version in `elroi-site-editor.php`.
+Releases publish themselves: bump the version in `elroi-site-editor.php`, push to `main`, and the Release workflow builds `elroi-site-editor.zip` and attaches it to a new GitHub release.
 
 ## Requirements
 

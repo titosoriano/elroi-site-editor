@@ -1,0 +1,42 @@
+# Publishes a release with elroi-site-editor.zip attached whenever the Version in the plugin header
+# changes on main (or when run by hand from the Actions tab). Sites running the plugin then show
+# "Update available" (includes/updater.php). Nothing to drag into GitHub by hand.
+name: Release
+on:
+  push:
+    branches: [main]
+    paths: [elroi-site-editor.php]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: release
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read version
+        id: v
+        run: |
+          V=$(sed -n 's/^ \* Version: *//p' elroi-site-editor.php | tr -d ' \r')
+          grep -q "ELROI_SE_VERSION', '$V'" elroi-site-editor.php || { echo "::error::ELROI_SE_VERSION does not match Version $V"; exit 1; }
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if gh release view "v$V" --json assets -q '.assets[].name' 2>/dev/null | grep -qx elroi-site-editor.zip; then echo "done=1" >> "$GITHUB_OUTPUT"; fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Build zip (PHP lint)
+        if: steps.v.outputs.done != '1'
+        run: |
+          sh bin/release.sh
+          unzip -l dist/elroi-site-editor.zip | grep -q 'elroi-site-editor/elroi-site-editor.php'
+      - name: Publish release
+        if: steps.v.outputs.done != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.v.outputs.version }}
+        run: |
+          if gh release view "v$V" >/dev/null 2>&1; then
+            gh release upload "v$V" dist/elroi-site-editor.zip --clobber
+          else
+            gh release create "v$V" dist/elroi-site-editor.zip --target "$GITHUB_SHA" --title "v$V" --generate-notes
+          fi
