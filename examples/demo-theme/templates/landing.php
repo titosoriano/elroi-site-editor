@@ -9,7 +9,7 @@ $c = elroi_content();
 get_header();
 ?>
 <main class="wrap">
-	<h1><?php echo elroi_heading( $c['h1'] ? $c['h1'] : get_the_title() ); // phpcs:ignore ?></h1>
+	<h1><?php echo elroi_heading( $c['h1'] ? $c['h1'] : elroi_full_title() ); // phpcs:ignore ?></h1>
 	<?php echo elroi_paragraphs( $c['intro'] ); // phpcs:ignore ?>
 	<?php foreach ( $c['sections'] as $s ) : ?>
 		<section>

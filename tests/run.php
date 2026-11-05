@@ -446,11 +446,55 @@ $check( 'old-domain links in paragraphs stay on this site, same tab', str_contai
 null === $prev_hosts ? delete_option( 'elroi_previous_hosts' ) : update_option( 'elroi_previous_hosts', $prev_hosts );
 null === $prev_home ? delete_option( 'elroi_home_host' ) : update_option( 'elroi_home_host', $prev_home );
 
+// Short name: menus and lists show it, the title (and the h1 printed from it) keeps the full phrase.
+$sn_page = get_page_by_path( 'landing' );
+update_post_meta( $sn_page->ID, '_elroi_content', '{}' );
+$_POST = array( 'elroi_short_name_nonce' => wp_create_nonce( 'elroi_short_name' ), 'elroi_short_name' => '  Kitchens <b>now</b> ' );
+do_action( 'save_post_page', $sn_page->ID, $sn_page, true );
+$_POST = array();
+$check( 'short name: the box saves a cleaned short name', 'Kitchens now' === get_post_meta( $sn_page->ID, '_elroi_short_name', true ), get_post_meta( $sn_page->ID, '_elroi_short_name', true ) );
+$check( 'short name: the site shows it wherever the page title is printed', 'Kitchens now' === get_the_title( $sn_page ) && str_contains( wp_list_pages( array( 'echo' => false, 'include' => array( $sn_page->ID ) ) ), '>Kitchens now<' ) );
+$check( 'short name: elroi_full_title() keeps the whole title', 'Landing' === elroi_full_title( $sn_page ) && 'Kitchens now' === get_the_title( $sn_page ) );
+$sn_html = wp_remote_retrieve_body( wp_remote_get( get_permalink( $sn_page ), array( 'timeout' => 20 ) ) );
+$check( 'short name: a template that prints the title as its h1 shows the full title', str_contains( $sn_html, '<h1>Landing</h1>' ), substr( $sn_html, (int) strpos( $sn_html, '<h1' ), 200 ) );
+add_filter( 'elroi_short_names', '__return_false' );
+$check( 'short name: elroi_short_names turns the swap off', 'Landing' === get_the_title( $sn_page ) );
+remove_filter( 'elroi_short_names', '__return_false' );
+ob_start();
+elroi_short_name_box( $sn_page );
+$sn_box = ob_get_clean();
+$check( 'short name: the box shows the stored name, labelled, with help', str_contains( $sn_box, 'value="Kitchens now"' ) && str_contains( $sn_box, 'for="elroi-short-name"' ) && str_contains( $sn_box, 'menus, breadcrumbs' ) );
+$_POST = array( 'elroi_short_name_nonce' => wp_create_nonce( 'elroi_short_name' ), 'elroi_short_name' => '' );
+do_action( 'save_post_page', $sn_page->ID, $sn_page, true );
+$_POST = array();
+$check( 'short name: emptying it shows the title again', '' === get_post_meta( $sn_page->ID, '_elroi_short_name', true ) && 'Landing' === get_the_title( $sn_page ) );
+add_filter( 'elroi_short_name_meta_key', $sn_key = fn() => '_nv_label' );
+update_post_meta( $sn_page->ID, '_nv_label', 'Old label' );
+$check( 'short name: a site can keep its existing meta key', 'Old label' === get_the_title( $sn_page ) );
+delete_post_meta( $sn_page->ID, '_nv_label' );
+remove_filter( 'elroi_short_name_meta_key', $sn_key );
+
 // Put the content back.
 foreach ( $backup as $id => $raw ) {
 	$cfg = elroi_template_for( $id );
 	'' === $raw ? delete_post_meta( $id, $cfg['meta_key'] ) : update_post_meta( $id, $cfg['meta_key'], wp_slash( $raw ) );
 }
+
+// Rank Math prints nothing until it is connected or registration is skipped: Site Health says so.
+$check( 'rank math check: nothing to report without Rank Math', ! elroi_rank_math_blocked() && 'good' === elroi_rank_math_health_test()['status'] );
+defined( 'RANK_MATH_VERSION' ) || define( 'RANK_MATH_VERSION', '1.0.0-test' );
+$rm_skip = get_option( 'rank_math_registration_skip', null );
+delete_option( 'rank_math_registration_skip' );
+delete_option( 'rank_math_connect_data' );
+$rm_test = elroi_rank_math_health_test();
+$check( 'rank math check: active, not connected and not skipped is critical, with a fix button', elroi_rank_math_blocked() && 'critical' === $rm_test['status'] && str_contains( $rm_test['actions'], 'elroi_rank_math_skip' ) && isset( apply_filters( 'site_status_tests', array( 'direct' => array() ) )['direct']['elroi_rank_math'] ), $rm_test );
+update_option( 'rank_math_registration_skip', 1 );
+$check( 'rank math check: skipped registration passes', ! elroi_rank_math_blocked() && 'good' === elroi_rank_math_health_test()['status'] );
+delete_option( 'rank_math_registration_skip' );
+update_option( 'rank_math_connect_data', array( 'connected' => true, 'api_key' => 'k' ) );
+$check( 'rank math check: a connected account passes', ! elroi_rank_math_blocked() );
+delete_option( 'rank_math_connect_data' );
+null === $rm_skip ? delete_option( 'rank_math_registration_skip' ) : update_option( 'rank_math_registration_skip', $rm_skip );
 
 $failed = array_values( array_filter( $results, fn( $r ) => ! $r['ok'] ) );
 echo wp_json_encode(
