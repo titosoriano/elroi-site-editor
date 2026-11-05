@@ -30,7 +30,7 @@ jobs:
       - name: Tests on WordPress Playground
         working-directory: elroi-site-editor
         run: |
-          npx -y @wp-playground/cli@3.1.56 server --port=9400 --login --blueprint=tests/blueprint.json \
+          npx -y @wp-playground/cli@3.1.56 server --port=9400 --workers=3 --login --blueprint=tests/blueprint.json \
             --mount="$PWD:/wordpress/wp-content/plugins/elroi-site-editor" \
             --mount="$PWD/examples/demo-theme:/wordpress/wp-content/themes/elroi-demo" \
             --mount="$PWD/tests:/wordpress/elroi-tests" > /tmp/playground.log 2>&1 &
@@ -38,7 +38,7 @@ jobs:
           grep -q 'Ready!' /tmp/playground.log || { cat /tmp/playground.log; exit 1; }
           sleep 5
           for i in 1 2 3 4 5; do
-            code=$(curl -sS -o /tmp/result.json -w '%{http_code}' --max-time 600 http://127.0.0.1:9400/elroi-tests/run.php || true)
+            code=$(curl -sS -o /tmp/result.json -w '%{http_code}' --max-time 300 http://127.0.0.1:9400/elroi-tests/run.php || true)
             [ "$code" = "200" ] && break
             echo "Test page answered HTTP $code, trying again"; sleep 10
           done
