@@ -36,7 +36,13 @@ jobs:
             --mount="$PWD/tests:/wordpress/elroi-tests" > /tmp/playground.log 2>&1 &
           for i in $(seq 1 120); do grep -q 'Ready!' /tmp/playground.log && break; sleep 2; done
           grep -q 'Ready!' /tmp/playground.log || { cat /tmp/playground.log; exit 1; }
-          curl -s --max-time 600 http://127.0.0.1:9400/elroi-tests/run.php > /tmp/result.json || true
+          sleep 5
+          for i in 1 2 3 4 5; do
+            code=$(curl -sS -o /tmp/result.json -w '%{http_code}' --max-time 600 http://127.0.0.1:9400/elroi-tests/run.php || true)
+            [ "$code" = "200" ] && break
+            echo "Test page answered HTTP $code, trying again"; sleep 10
+          done
+          [ "$code" = "200" ] || { echo '--- Playground log ---'; tail -n 80 /tmp/playground.log; }
           python3 - <<'PY'
           import json, os, sys
           raw = open('/tmp/result.json').read()
