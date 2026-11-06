@@ -90,7 +90,7 @@ Every field: `type` (default `text`), `label`, `help`, `default`, `half` (true: 
 | `lines` | list of strings | One per line (checklists, town lists, categories). |
 | `link` | string | Site path (`/services/`) or full URL; addresses of this site are stored as paths. Print with `elroi_link()`. |
 | `url`, `email` | string | Validated. |
-| `embed` | string | The https address of a widget (manufacturer color tool, map, booking calendar). Only hosts in `elroi_embed_hosts()` are kept: widgets.gaf.com, www.google.com, calendly.com, www.youtube-nocookie.com, player.vimeo.com, plus the field's `hosts` and the `elroi_embed_hosts` filter. A pasted `<iframe>` code is reduced to its address. Print with `elroi_embed( $url, array( 'title' => '...' ) )`, a lazy iframe ('' when the host is not allowed). |
+| `embed` | string | The https address of a widget (manufacturer color tool, map, booking calendar). Only hosts in `elroi_embed_hosts()` are kept: widgets.gaf.com, www.google.com, calendly.com, www.youtube-nocookie.com, player.vimeo.com, plus the field's `hosts` and the `elroi_embed_hosts` filter. A pasted `<iframe>` code is reduced to its address. Print with `elroi_embed( $url, array( 'title' => '...' ) )`, a lazy iframe ('' when the host is not allowed; `src`, `srcdoc` and `on*` attributes are ignored). |
 | `number` | int or float | |
 | `numbers` | list of numbers | Fixed list with `labels` (e.g. Across, Down, Zoom) and a `default` list; blanks take the default. |
 | `select` | string | `options` list. |
@@ -124,14 +124,14 @@ Reading: `elroi_content()` returns every field for the current page with default
 
 Never write the page meta directly with a few fields: that replaces the whole page. Use:
 
-- `elroi_update( $post, $changes )`: changes only what `$changes` names. Named keys (groups) merge key by key, lists (repeaters, paragraphs, galleries) are replaced whole, `null` removes a value so it shows its default. Keeps a revision before and after.
+- `elroi_update( $post, $changes )`: changes only what `$changes` names. Named keys (groups) merge key by key, lists (repeaters, paragraphs, galleries) are replaced whole, `null` removes a value so it shows its default. Values are cleaned for their field type exactly as the form cleans them (no HTML, only http(s)/mailto/tel addresses, image IDs as numbers; keys outside the schema are cleaned as plain text), so an agent cannot store what a person could not type. Keeps a revision before and after.
 - `elroi_set( 'hero.h1', 'New *title*', $post )`: one value by dot path (named keys only; change a repeater item by passing the whole list to `elroi_update()`).
 - Abilities (WordPress 6.9+, for MCP and AI agents): `elroi/get-page-content` (field outline, stored changes, full content) and `elroi/update-page-content` (`page_id`, `changes`, same rules as `elroi_update()`). Both need the right to edit that page. `elroi/recommended-plugins` lists the recommended plugins and their state (needs the right to install or activate plugins). Filter `elroi_abilities` (false) turns them all off.
 - A guard on the meta: `update_post_meta()` with an array is merged into the stored fields instead of replacing them, and a string that is not valid JSON is refused. A complete JSON string still replaces the content on purpose (migrations).
 
 ## Links and domain changes
 
-Sites are built on a temporary address and moved later. Addresses of the site itself typed in a `link` field or a `[words](url)` link are stored as paths (`/about/`), so they follow the domain. The plugin remembers earlier addresses of the site (option `elroi_previous_hosts`, filled when the home URL changes; filter `elroi_site_hosts`), and `elroi_link()` / `elroi_rich()` print links stored with an old address with the current one, in the same tab. Blog posts and other block-editor content are not covered: run a search-replace on them after the move.
+Sites are built on a temporary address and moved later. Addresses of the site itself typed in a `link` field or a `[words](url)` link are stored as paths (`/about/`), so they follow the domain. The plugin remembers earlier addresses of the site (option `elroi_previous_hosts`, the last 10, recorded on an administrator's first wp-admin visit after the home URL changes, never by a visitor; filter `elroi_site_hosts`), and `elroi_link()` / `elroi_rich()` print links stored with an old address with the current one, in the same tab. Blog posts and other block-editor content are not covered: run a search-replace on them after the move.
 
 ## Search engines (Rank Math)
 

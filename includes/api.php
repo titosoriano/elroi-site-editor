@@ -145,7 +145,12 @@ function elroi_embed( $url, $attrs = array() ) {
 	$attrs += array( 'title' => 'Embedded widget', 'loading' => 'lazy', 'referrerpolicy' => 'strict-origin-when-cross-origin', 'allow' => 'fullscreen' );
 	$out    = '<iframe src="' . esc_url( $url ) . '"';
 	foreach ( $attrs as $k => $v ) {
-		$out .= ' ' . sanitize_key( $k ) . '="' . esc_attr( $v ) . '"';
+		$k = sanitize_key( $k );
+		// The address is checked above: never let an attribute replace it or run script.
+		if ( '' === $k || in_array( $k, array( 'src', 'srcdoc' ), true ) || str_starts_with( $k, 'on' ) ) {
+			continue;
+		}
+		$out .= ' ' . $k . '="' . esc_attr( $v ) . '"';
 	}
 	return $out . '></iframe>';
 }

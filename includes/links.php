@@ -39,11 +39,21 @@ function elroi_note_home_host() {
 	if ( '' !== $was ) {
 		$prev = (array) get_option( 'elroi_previous_hosts', array() );
 		$prev = array_values( array_diff( array_unique( array_merge( $prev, array( $was ) ) ), array( $host ) ) );
-		update_option( 'elroi_previous_hosts', $prev, true );
+		update_option( 'elroi_previous_hosts', array_slice( $prev, -10 ), true );
 	}
 	update_option( 'elroi_home_host', $host, true );
 }
-add_action( 'init', 'elroi_note_home_host', 1 );
+// Only an administrator's wp-admin visit records a move: on servers whose home URL follows the
+// request's Host header, visitors could otherwise add any host name (and write options) at will.
+add_action(
+	'admin_init',
+	function () {
+		if ( current_user_can( 'manage_options' ) ) {
+			elroi_note_home_host();
+		}
+	},
+	1
+);
 
 /**
  * A full address on this site (current or earlier domain) as a site path; anything else unchanged.

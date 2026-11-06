@@ -203,6 +203,7 @@ $data = apply_filters( 'wp_insert_post_data', array( 'post_name' => 'moved', 'po
 $check( 'editor cannot delete a designed page', ! current_user_can( 'delete_post', $landing->ID ) );
 $check( 'editor cannot change slug, parent, status or order', array( 'landing', 0, 'publish', 0 ) === array( $data['post_name'], $data['post_parent'], $data['post_status'], $data['menu_order'] ), $data );
 $check( 'editor cannot change the template', false === apply_filters( 'update_post_metadata', null, $landing->ID, '_wp_page_template', 'default', '' ) );
+$check( 'editor cannot add or delete the template either', false === apply_filters( 'add_post_metadata', null, $landing->ID, '_wp_page_template', 'default', true ) && false === apply_filters( 'delete_post_metadata', null, $landing->ID, '_wp_page_template', '', false ) );
 $check( 'editor can edit the page and open settings', current_user_can( 'edit_post', $landing->ID ) && current_user_can( elroi_client_cap() ) );
 $GLOBALS['current_user'] = null;
 wp_set_current_user( $admin->ID );
@@ -385,7 +386,30 @@ if ( function_exists( 'wp_get_ability' ) ) {
 	$denied = $upd_ab ? $upd_ab->execute( array( 'page_id' => $landing->ID, 'changes' => array( 'h1' => 'Hacked' ) ) ) : null;
 	wp_set_current_user( 1 );
 	$check( 'abilities refuse visitors who cannot edit the page', is_wp_error( $denied ) && 'From an agent' === ( elroi_saved( $landing )['h1'] ?? '' ) );
+	$kept = elroi_stored( $landing, elroi_template_for( $landing ) );
+	$upd_ab->execute(
+		array(
+			'page_id' => $landing->ID,
+			'changes' => array(
+				'h1'       => '<script>alert(1)</script>Safe *title*',
+				'cta'      => 'javascript:alert(1)',
+				'gallery'  => array( '5', 'x<b>' ),
+				'sections' => array( array( 'heading' => '<b onclick="x()">Bold</b>', 'image_id' => '7"><svg onload=alert(1)>' ) ),
+				'note'     => '<img src=x onerror=alert(1)>ok',
+			),
+		)
+	);
+	$dirty = elroi_saved( $landing );
+	$check(
+		'ability changes are cleaned like the form (no HTML, no script links)',
+		'Safe *title*' === ( $dirty['h1'] ?? '' ) && ! isset( $dirty['cta'] ) && array( 5 ) === ( $dirty['gallery'] ?? null ) && array( array( 'heading' => 'Bold', 'image_id' => 7 ) ) === ( $dirty['sections'] ?? null ) && 'ok' === ( $dirty['note'] ?? '' ),
+		$dirty
+	);
+	elroi_write( $landing, elroi_template_for( $landing ), $kept );
 }
+
+$emb = elroi_embed( 'https://widgets.gaf.com/hdz-widget', array( 'title' => 'Colors', 'onload' => 'alert(1)', 'src' => 'https://evil.example/', 'srcdoc' => '<script>x</script>' ) );
+$check( 'embed attributes cannot replace the address or run script', str_contains( $emb, 'src="https://widgets.gaf.com/hdz-widget"' ) && ! str_contains( $emb, 'onload' ) && ! str_contains( $emb, 'evil' ) && ! str_contains( $emb, 'srcdoc' ), $emb );
 
 // Recommended plugins (includes/recommended.php): what every new ElRoi site needs.
 add_filter( 'elroi_on_litespeed', '__return_false' );

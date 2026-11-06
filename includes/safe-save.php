@@ -52,6 +52,71 @@ function elroi_merge_changes( $old, $changes ) {
 }
 
 /**
+ * Clean changes the way the form cleans what it saves, so tools and agents cannot store what a
+ * person typing in the form could not (HTML, script links, text where an image ID belongs).
+ * Values come in their stored shape (lists as arrays); null is kept, it removes the key.
+ *
+ * @param array $fields  Normalized fields.
+ * @param array $changes Changes.
+ */
+function elroi_clean_changes( $fields, $changes ) {
+	$out = array();
+	foreach ( (array) $changes as $k => $v ) {
+		if ( null === $v ) {
+			$out[ $k ] = null;
+		} elseif ( isset( $fields[ $k ] ) ) {
+			$out[ $k ] = elroi_clean_stored( $fields[ $k ], $v );
+		} else {
+			$out[ $k ] = elroi_clean_deep( $v );
+		}
+	}
+	return $out;
+}
+
+/**
+ * One value in its stored shape, cleaned for its field type. An empty result is null (the field
+ * shows its default), as when the form is saved with that field empty.
+ *
+ * @param array $f Field.
+ * @param mixed $v Value.
+ */
+function elroi_clean_stored( $f, $v ) {
+	switch ( $f['type'] ) {
+		case 'group':
+			return is_array( $v ) ? elroi_clean_changes( $f['fields'], $v ) : null;
+		case 'repeater':
+			$items = array();
+			foreach ( is_array( $v ) ? array_values( $v ) : array() as $item ) {
+				$item = is_array( $item ) ? array_filter( elroi_clean_changes( $f['fields'], $item ), fn( $x ) => null !== $x ) : array();
+				if ( $item ) {
+					$items[] = $item;
+				}
+			}
+			return $items ? $items : null;
+		case 'paragraphs':
+		case 'lines':
+			if ( ! is_array( $v ) ) {
+				return elroi_build_value( $f, $v );
+			}
+			$list = array_values( array_filter( array_map( 'elroi_clean_line', $v ), 'strlen' ) );
+			$list = 'paragraphs' === $f['type'] ? array_map( 'elroi_local_links', $list ) : $list;
+			return $list ? $list : null;
+		case 'checkboxes':
+			$list = array_values( array_filter( array_map( 'elroi_clean_line', (array) $v ), 'strlen' ) );
+			return $list ? $list : null;
+		case 'select':
+			// Options can come from another field (options_from), so only the text is cleaned here.
+			$s = elroi_clean_line( $v );
+			return '' === $s ? null : $s;
+		case 'numbers':
+			$list = array_map( fn( $x ) => is_numeric( $x ) ? $x + 0 : 0, array_values( (array) $v ) );
+			return $list ? $list : null;
+		default:
+			return elroi_build_value( $f, $v );
+	}
+}
+
+/**
  * Stored values of a page straight from the database (never the edit-screen preview).
  *
  * @param WP_Post $post Page.
@@ -94,7 +159,7 @@ function elroi_update( $post, $changes ) {
 		return new WP_Error( 'elroi_no_template', 'This page is not built from fields.' );
 	}
 	$old = elroi_stored( $post, $cfg );
-	$new = elroi_merge_changes( $old, (array) $changes );
+	$new = elroi_merge_changes( $old, elroi_clean_changes( $cfg['fields'], (array) $changes ) );
 	if ( $new === $old ) {
 		return $old;
 	}

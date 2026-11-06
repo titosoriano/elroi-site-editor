@@ -62,17 +62,25 @@ add_filter(
 	2
 );
 
-add_filter(
-	'update_post_metadata',
-	function ( $check, $id, $key, $value ) {
-		if ( '_wp_page_template' === $key && ! elroi_can_restructure() && elroi_is_locked_page( $id ) && get_post_meta( $id, '_wp_page_template', true ) !== $value ) {
-			return false;
-		}
+/**
+ * Keep the template of a locked page: adding, changing or deleting `_wp_page_template` is refused
+ * for non-administrators (through the edit screen, the REST API or code run as them).
+ *
+ * @param mixed  $check Short-circuit value.
+ * @param int    $id    Post ID.
+ * @param string $key   Meta key.
+ * @param mixed  $value New value (empty when deleting).
+ */
+function elroi_lock_template_meta( $check, $id, $key, $value = '' ) {
+	if ( '_wp_page_template' !== $key || null !== $check || elroi_can_restructure() || ! elroi_is_locked_page( $id ) ) {
 		return $check;
-	},
-	10,
-	4
-);
+	}
+	$deleting = 'delete_post_metadata' === current_filter();
+	return ! $deleting && get_post_meta( $id, '_wp_page_template', true ) === $value ? $check : false;
+}
+add_filter( 'update_post_metadata', 'elroi_lock_template_meta', 10, 4 );
+add_filter( 'add_post_metadata', 'elroi_lock_template_meta', 10, 4 );
+add_filter( 'delete_post_metadata', 'elroi_lock_template_meta', 10, 4 );
 
 add_action(
 	'add_meta_boxes_page',
