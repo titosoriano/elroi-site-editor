@@ -51,8 +51,8 @@ function elroi_recommended_plugins() {
 			'name'  => 'Kadence Security',
 			'file'  => 'better-wp-security/better-wp-security.php',
 			'level' => 'required',
-			'why'   => 'Brute-force protection, two-factor sign-in and file hardening.',
-			'setup' => 'Run its setup. Turn on brute-force protection and two-factor for administrators. Do not hide or rename the login page: it can cut off the AI agent connection (MCP).',
+			'why'   => 'Firewall, brute-force protection, two-factor sign-in and file hardening. Use only this one security plugin: a second firewall (Wordfence, Sucuri...) doubles the lockouts and slows the site.',
+			'setup' => 'Run its setup. Turn on brute-force protection and the network ban list; set up two-factor on every administrator account (each person scans the code in their own profile). Advanced > WordPress Tweaks > XML-RPC: Disable (Cloudflare blocking it at the edge is not enough: requests sent straight to the server skip it; ElRoi Starter also turns it off). Password Requirements: strong passwords and refuse breached ones. Do not hide or rename the login page (Hide Backend): Cloudflare\'s human check guards the standard address, and a new one can cut off the AI agent connection (MCP) and the host\'s one-click login. Delete plugins the site does not use, file manager plugins above all.',
 		),
 		'updraftplus'        => array(
 			'name'  => 'UpdraftPlus',

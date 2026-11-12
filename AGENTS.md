@@ -19,7 +19,7 @@ Use it on every new client site ElRoi builds. Install and activate the plugin fi
 | Plugin (slug) | Level | Why | After installing |
 |---|---|---|---|
 | Rank Math SEO (`seo-by-rank-math`) | required | Titles, descriptions, sitemaps, schema, page score | Setup wizard; Local SEO "Organization"; Instant Indexing for Bing; every page 80+ |
-| Kadence Security (`better-wp-security`) | required | Brute-force protection, two-factor, hardening | Brute force + 2FA for admins; never hide the login page (it cuts off MCP) |
+| Kadence Security (`better-wp-security`) | required | Firewall, brute-force protection, two-factor, hardening; the only security plugin (no second firewall) | Brute force + network ban list; 2FA on every admin; XML-RPC: Disable; strong and non-breached passwords; never hide the login page (it cuts off MCP and Cloudflare's human check); delete unused plugins, file managers above all |
 | UpdraftPlus (`updraftplus`) | required | Off-site daily backups | Daily files + database, keep 7 / 14, Google Drive or Dropbox, Backup Now once |
 | LiteSpeed Cache (`litespeed-cache`) | recommended, LiteSpeed servers only | Page cache | Starter's Site Health "Speed settings" button; never JS delay/combine, UCSS or its lazy load |
 | FluentSMTP (`fluent-smtp`) | recommended | Form and password emails through a real mailbox | Can wait until the design is done, or skip with a CRM form; Hostinger: smtp.hostinger.com, 465, SSL |
