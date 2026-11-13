@@ -534,6 +534,17 @@ elroi_render_field( $em_f, 'elroi[widget]', 'https://widgets.gaf.com/hdz-widget'
 $em_form = ob_get_clean();
 $check( 'embed: the form field lists the allowed sites', str_contains( $em_form, 'value="https://widgets.gaf.com/hdz-widget"' ) && str_contains( $em_form, 'Allowed sites: widgets.gaf.com' ), $em_form );
 
+// Text with emoji and accents survives cleaning (✅ holds byte 0x85, which a non-UTF-8 \R takes as a line break).
+$utf = 'Día ✅ hecho 💪🔥 Åsa ąż ñ ¿sí?';
+$utf_ok = true;
+foreach ( array( 'text', 'textarea' ) as $utf_t ) {
+	$utf_ok = $utf_ok && $utf === elroi_build_value( elroi_normalize_field( array( 'type' => $utf_t ), 'u' ), $utf );
+}
+$check( 'utf-8: text and textarea keep emoji and accents', $utf_ok );
+$check( 'utf-8: paragraphs split on blank lines and keep emoji', array( $utf, 'Dos ✅' ) === elroi_build_value( elroi_normalize_field( array( 'type' => 'paragraphs' ), 'u' ), "$utf\r\n\r\nDos ✅" ) );
+$check( 'utf-8: lines split on line breaks and keep emoji', array( $utf, 'Dos ✅' ) === elroi_build_value( elroi_normalize_field( array( 'type' => 'lines' ), 'u' ), "$utf\nDos ✅" ) );
+$check( 'utf-8: a line break inside a one-line field becomes a space', 'Uno ✅ dos' === elroi_build_value( elroi_normalize_field( array( 'type' => 'textarea' ), 'u' ), "Uno ✅\n  dos" ) );
+
 $failed = array_values( array_filter( $results, fn( $r ) => ! $r['ok'] ) );
 echo wp_json_encode(
 	array(

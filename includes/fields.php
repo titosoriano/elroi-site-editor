@@ -93,13 +93,21 @@ function elroi_is_empty( $v ) {
 	return null === $v || '' === $v || 0 === $v || ( is_string( $v ) && '' === trim( $v ) );
 }
 
+/*
+ * A line break, by bytes. Not \R: without the u flag \R also takes byte 0x85, which sits inside
+ * characters such as ✅ (E2 9C 85), Å and ą, leaving broken UTF-8 that sanitize_text_field() empties.
+ */
+if ( ! defined( 'ELROI_EOL' ) ) {
+	define( 'ELROI_EOL', '(?:\r\n|[\n\x0B\f\r])' );
+}
+
 /**
  * One line of plain text.
  *
  * @param mixed $v Value.
  */
 function elroi_clean_line( $v ) {
-	return sanitize_text_field( preg_replace( '/\s*\R\s*/', ' ', is_scalar( $v ) ? (string) $v : '' ) );
+	return sanitize_text_field( preg_replace( '/\s*' . ELROI_EOL . '\s*/', ' ', is_scalar( $v ) ? (string) $v : '' ) );
 }
 
 /**
@@ -109,7 +117,7 @@ function elroi_clean_line( $v ) {
  */
 function elroi_split_paragraphs( $text ) {
 	$out = array();
-	foreach ( preg_split( '/\R\s*\R/', trim( is_scalar( $text ) ? (string) $text : '' ) ) as $p ) {
+	foreach ( preg_split( '/' . ELROI_EOL . '\s*' . ELROI_EOL . '/', trim( is_scalar( $text ) ? (string) $text : '' ) ) as $p ) {
 		$p = elroi_clean_line( $p );
 		if ( '' !== $p ) {
 			$out[] = $p;
@@ -124,7 +132,7 @@ function elroi_split_paragraphs( $text ) {
  * @param mixed $text Text.
  */
 function elroi_split_lines( $text ) {
-	return array_values( array_filter( array_map( 'sanitize_text_field', preg_split( '/\R/', is_scalar( $text ) ? (string) $text : '' ) ), 'strlen' ) );
+	return array_values( array_filter( array_map( 'sanitize_text_field', preg_split( '/' . ELROI_EOL . '/', is_scalar( $text ) ? (string) $text : '' ) ), 'strlen' ) );
 }
 
 /**
